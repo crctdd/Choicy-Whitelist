@@ -24,10 +24,6 @@
 
 本项目沿用 Choicy 的 **MIT License**，完整条款见 [LICENSE](LICENSE)。原作者的版权声明及许可声明予以保留；复制、修改或分发本项目时，请遵守许可证中保留相关声明的要求。软件按许可证约定以“现状”提供，不附带任何明示或默示担保。
 
-项目包含的第三方代码遵循各自的许可证，相关声明保留在对应文件和目录中，包括：
-
 - [AltList 许可证](external/AltList/LICENSE)
 - [ChOma 许可证](external/ChOma/LICENSE)
 - [litehook 许可证](external/litehook/LICENSE)
-
-部分第三方头文件另附 Apple 的版权或许可声明，使用和分发时同样应遵守其适用条款。
