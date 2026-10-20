@@ -1,0 +1,64 @@
+"PROCESS_CONFIGURATION" = "Prozess Konfiguration";
+
+"APPLICATIONS" = "Applikationen";
+"DAEMONS" = "Hintergrunddienste";
+"ADDITIONAL_EXECUTABLES" = "Zusätzliche ausführbare Dateien";
+"OVERWRITE_GLOBAL_TWEAK_CONFIGURATION" = "Globale Tweak Konfiguration überschreiben";
+"DISABLE_TWEAK_INJECTION" = "Tweaks deaktivieren";
+"LAUNCH_WITHOUT_TWEAKS" = "Ohne Tweaks starten";
+"LAUNCH_WITH_TWEAKS" = "Mit Tweaks starten";
+"LAUNCH_WITHOUT_TWEAKS_OPTION" = "\"Ohne Tweaks starten\" Option";
+"LAUNCH_WITH_TWEAKS_OPTION" = "\"Mit Tweaks starten\" Option";
+"APP_OPTIONS" = "App Optionen";
+"APP_OPTIONS_FOOTER" = "Fügt eine \"Ohne Tweaks starten\" Option zum zum 3D Touch / Haptic Touch Menü einer App hinzu. Wenn aktiviert wird die Option zu einer \"Mit Tweaks starten\" Option, falls Tweaks für die jeweilige App in der Konfiguration bereits deaktiviert wurden.";
+"CUSTOM_TWEAK_CONFIGURATION" = "Benutzerdefinierte Tweak Konfiguration";
+"ALLOW" = "Erlauben";
+"DENY" = "Verweigern";
+"GREYED_OUT_ENTRIES" = "Ausgegraute Einträge?";
+
+"TWEAKS_DISABLED" = "Tweaks deaktiviert";
+"CUSTOM" = "Benutzerdefiniert";
+"GLOBAL_OVERWRITE" = "Globale Überschreibung";
+"SHOW_RECOMMENDED_DAEMONS" = "Empfohlene Hintergrunddienste anzeigen";
+"SHOW_ALL_DAEMONS" = "Alle Hintergrunddienste anzeigen";
+"SYSTEM_APPLICATIONS" = "Systemapplikationen";
+"USER_APPLICATIONS" = "Benutzerapplikationen";
+"HIDDEN_APPLICATIONS" = "Versteckte Applikationen";
+"GLOBAL_CONFIGURATION" = "Globale Konfiguration";
+"GLOBAL_TWEAK_CONFIGURATION" = "Globale Tweak Konfiguration";
+"ADDITIONAL_EXECUTABLES_FOOTER" = "Hier können zusätzliche ausführbare Dateien (nicht-Hintergrunddienste) hinzugefügt werden und Tweak Konfigurationen auf diese angewendet werden.\n\nWARNUNG: Diese Sektion ist für Power User, benutze sie nur wenn du weißt was du tuhst.";
+"SELECT_EXECUTABLE" = "Ausführbare Datei auswählen";
+"SELECT_EXECUTABLE_MESSAGE" = "Gebe den Pfad zur ausführbaren Datei an, welche zur Liste hinzugefügt werden soll.";
+"ERROR" = "Fehler";
+"ERROR_FILE_NOT_FOUND" = "Unter dem angegeben Pfad wurde keine Datei gefunden.";
+"ERROR_FILE_NO_EXECUTABLE" = "Die Datei an dem angegebenen Pfad ist nicht ausführbar.";
+"ERROR_NO_TWEAKS_INJECT" = "In die ausgwählte ausführbare Datei laden keine Tweaks. Das Hinzufügen wurde daher verhindert, da es keinen Nutzen hätte.";
+"ADD" = "Hinzufügen";
+"PATH" = "Pfad";
+"TWEAKS" = "Tweaks";
+"GLOBAL_TWEAK_CONFIGURATION_BOTTOM_NOTICE" = "Diese Globale Konfiguration kann per Prozess überschrieben werden indem die \"Globale Konfiguration überschreiben\" Option in den Einstellungen eines Prozesses aktiviert wird.";
+"CREDITS" = "Credits";
+"RESPRING" = "Respring";
+"WARNING_ALERT_TITLE" = "Warnung";
+"THE_INJECTION_PLATFORM" = "die Injektionsplattform";
+"TWEAKS_LOADING_BEFORE_CHOICY_ALERT_MESSAGE" = "Es wurde festgestellt, dass einige Tweaks außer über die \"Tweaks deaktivieren\" Option bei Apps nicht deaktiviert werden können, da %@ die betroffenen Tweaks vor Choicy lädt. Diese werden daher ausgegraut um Verwirrung zu vermeiden.";
+"CHOICYLOADER_ADVICE" = "Zur Umgehung des Problems kann ChoicyLoader von der Quelle https://opa334.github.io installiert werden.";
+"OPEN_REPO" = "Quelle öffnen";
+"DONT_SHOW_AGAIN" = "Nie wieder anzeigen";
+"CLOSE" = "Schließen";
+"DAEMON_LIST_BOTTOM_NOTICE" = "Hintergrunddienste in welche kein Tweak geladen wird, werden automatisch ausgeblendet";
+"PACKAGE" = "Packet";
+"TWEAK_TROUBLESHOOTING_FOOTER" = "Wenn der Verdacht besteht, dass Choicy einen Tweak davon abhält korrekt zu funktionieren, kann der Tweak in dieser Sektion ausgewählt werden um herrauszufinden, ob einer Dylib des Tweaks die Injektion verweigert wird.";
+"CANCEL" = "Abbrechen";
+"RESET_PREFERENCES" = "Einstellungen zurücksetzen";
+"RESET_PREFERENCES_MESSAGE" = "Du bist dabei die Choicy Einstellungen zurückzusetzen, dies kann nicht rückgangig gemacht werden. Soll der Vorgang fortgesetzt werden?";
+"CONTINUE" = "Fortsetzen";
+
+"ENABLE_TWEAK_INJECTION" = "Enable Tweak Injection";
+
+"APP_PLUGINS" = "Application Extensions";
+
+"REBUILD_PROCESS_CACHE" = "Rebuild Process Cache";
+
+"PROCESS_CONFIGURATION_FOOTER" = "· Tweak injection is disabled by default.\n· Enable injection to also use custom tweak configuration.\n· Privileged tweaks are UIKit tweaks and apply only to visible Applications.";
+"DISABLE_PRIVILEGED_TWEAKS" = "Disable Privileged Tweaks";

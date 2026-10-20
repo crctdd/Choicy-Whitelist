@@ -1,0 +1,63 @@
+"PROCESS_CONFIGURATION" = "进程配置";
+
+"APPLICATIONS" = "应用程序";
+"DAEMONS" = "系统进程";
+"ADDITIONAL_EXECUTABLES" = "额外的可执行文件";
+"OVERWRITE_GLOBAL_TWEAK_CONFIGURATION" = "覆盖全局插件配置";
+"DISABLE_TWEAK_INJECTION" = "禁用插件注入";
+"LAUNCH_WITHOUT_TWEAKS" = "无插件启动";
+"LAUNCH_WITH_TWEAKS" = "带插件启动";
+"LAUNCH_WITHOUT_TWEAKS_OPTION" = "「无插件启动」选项";
+"LAUNCH_WITH_TWEAKS_OPTION" = "「带插件启动」选项";
+"APP_OPTIONS" = "应用选项";
+"APP_OPTIONS_FOOTER" = "· “无插件启动” 本次启动禁止所有越狱插件对其注入。\n· “带插件启动” 本次启动允许所有越狱插件对其注入。";
+"CUSTOM_TWEAK_CONFIGURATION" = "自定义插件配置";
+"ALLOW" = "允许";
+"DENY" = "拒绝";
+"GREYED_OUT_ENTRIES" = "灰色条目";
+
+"TWEAKS_DISABLED" = "插件已禁用";
+"CUSTOM" = "自定义";
+"GLOBAL_OVERWRITE" = "全局覆盖";
+"SHOW_RECOMMENDED_DAEMONS" = "显示推荐系统进程";
+"SHOW_ALL_DAEMONS" = "显示所有系统进程";
+"SYSTEM_APPLICATIONS" = "系统应用程序";
+"USER_APPLICATIONS" = "用户应用程序";
+"HIDDEN_APPLICATIONS" = "隐藏应用";
+"GLOBAL_CONFIGURATION" = "全局配置";
+"GLOBAL_TWEAK_CONFIGURATION" = "全局插件配置";
+"ADDITIONAL_EXECUTABLES_FOOTER" = "在此处添加额外的可执行文件（非系统进程），并对它们应用插件配置。\n\n警告：此部分适用于高级用户，请只在您知道自己在做什么的情况下使用。";
+"SELECT_EXECUTABLE" = "选择可执行文件";
+"SELECT_EXECUTABLE_MESSAGE" = "指定要添加到列表中的可执行文件路径。";
+"ERROR" = "错误";
+"ERROR_FILE_NOT_FOUND" = "所选路径上找不到文件。";
+"ERROR_FILE_NO_EXECUTABLE" = "所选路径上的文件似乎不是可执行文件。";
+"ERROR_NO_TWEAKS_INJECT" = "添加失败：没有插件尝试诸如您添加的可执行文件。";
+"ADD" = "添加";
+"PATH" = "路径";
+"TWEAKS" = "插件";
+"GLOBAL_TWEAK_CONFIGURATION_BOTTOM_NOTICE" = "此全局配置可以通过在进程的首选项页面中启用「覆盖全局插件配置」开关来进行逐个进程的覆盖。";
+"CREDITS" = "致谢";
+"RESPRING" = "注销";
+"WARNING_ALERT_TITLE" = "警告";
+"THE_INJECTION_PLATFORM" = "注入平台";
+"TWEAKS_LOADING_BEFORE_CHOICY_ALERT_MESSAGE" = "已确定在应用上除了使用「禁用插件注入」开关之外禁用某些插件将无效，因为 %@ 在 Choicy 之前加载插件。这些插件已灰显受以避免引起困惑。";
+"CHOICYLOADER_ADVICE" = "如果您想解决此问题，请从 `https://opa334.github.io` 仓库安装 ChoicyLoader。";
+"OPEN_REPO" = "打开仓库";
+"DONT_SHOW_AGAIN" = "不再显示";
+"CLOSE" = "关闭";
+"DAEMON_LIST_BOTTOM_NOTICE" = "没有插件尝试注入的系统进程会自动隐藏";
+"PACKAGE" = "软件包";
+"TWEAK_TROUBLESHOOTING_FOOTER" = "如果您怀疑 Choicy 可能阻止某个插件正常工作，您可以在此部分中选择该插件以查看 Choicy 是否有禁止插件中的 dylib。";
+"CANCEL" = "取消";
+"RESET_PREFERENCES" = "重置首选项";
+"RESET_PREFERENCES_MESSAGE" = "您将永久重置 Choicy 首选项。是否要继续？";
+"CONTINUE" = "继续";
+"ENABLE_TWEAK_INJECTION" = "启用插件注入";
+
+"APP_PLUGINS" = "应用拓展";
+
+"REBUILD_PROCESS_CACHE" = "重建进程缓存";
+
+"PROCESS_CONFIGURATION_FOOTER" = "· 默认禁用插件注入。\n· 手动启用后可同时使用自定义插件配置。\n· 特权插件是UIKit类型，仅“应用程序”可用。";
+"DISABLE_PRIVILEGED_TWEAKS" = "禁用特权插件";

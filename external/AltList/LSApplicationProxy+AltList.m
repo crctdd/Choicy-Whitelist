@@ -1,0 +1,177 @@
+#import <Foundation/Foundation.h>
+#import "CoreServices.h"
+#import "LSApplicationProxy+AltList.h"
+
+extern NSString *safe_getExecutablePath(void);
+
+@implementation LSApplicationProxy (AltList)
+
+- (BOOL)atl_isSystemApplication
+{
+	return [self.applicationType isEqualToString:@"System"] && ![self atl_isHidden];
+}
+
+- (BOOL)atl_isUserApplication
+{
+	return [self.applicationType isEqualToString:@"User"] && ![self atl_isHidden];
+}
+
+BOOL tagArrayContainsTag(NSArray* tagArr, NSString* tag)
+{
+	if(!tagArr || !tag) return NO;
+
+	__block BOOL found = NO;
+
+	[tagArr enumerateObjectsUsingBlock:^(NSString* tagToCheck, NSUInteger idx, BOOL* stop)
+	{
+		if(![tagToCheck isKindOfClass:[NSString class]])
+		{
+			return;
+		}
+
+		if([tagToCheck rangeOfString:tag options:0].location != NSNotFound)
+		{
+			found = YES;
+			*stop = YES;
+		}
+	}];
+
+	return found;
+}
+
+- (BOOL)atl_isHidden
+{
+	NSArray* appTags;
+	NSArray* recordAppTags;
+	NSArray* sbAppTags;
+
+	BOOL launchProhibited = NO;
+
+	if([self respondsToSelector:@selector(correspondingApplicationRecord)])
+	{
+
+		LSApplicationRecord* record = [self correspondingApplicationRecord];
+		recordAppTags = record.appTags;
+		launchProhibited = record.launchProhibited;
+	}
+	if([self respondsToSelector:@selector(appTags)])
+	{
+		appTags = self.appTags;
+	}
+	if(!launchProhibited && [self respondsToSelector:@selector(isLaunchProhibited)])
+	{
+		launchProhibited = self.launchProhibited;
+	}
+
+	NSURL* bundleURL = self.bundleURL;
+	if(bundleURL && [bundleURL checkResourceIsReachableAndReturnError:nil])
+	{
+		NSBundle* bundle = [NSBundle bundleWithURL:bundleURL];
+		sbAppTags = [bundle objectForInfoDictionaryKey:@"SBAppTags"];
+	}
+
+	BOOL isWebApplication = ([self.atl_bundleIdentifier rangeOfString:@"com.apple.webapp" options:NSCaseInsensitiveSearch].location != NSNotFound);
+	return tagArrayContainsTag(appTags, @"hidden") || tagArrayContainsTag(recordAppTags, @"hidden") || tagArrayContainsTag(sbAppTags, @"hidden") || isWebApplication || launchProhibited;
+}
+
+- (NSString*)atl_fastDisplayName
+{
+	NSString* cachedDisplayName = [self valueForKey:@"_localizedName"];
+	if(cachedDisplayName && ![cachedDisplayName isEqualToString:@""])
+	{
+		return cachedDisplayName;
+	}
+
+	NSString* localizedName;
+
+	NSURL* bundleURL = self.bundleURL;
+	if(!bundleURL || ![bundleURL checkResourceIsReachableAndReturnError:nil])
+	{
+		localizedName = self.localizedName;
+	}
+	else
+	{
+		NSBundle* bundle = [NSBundle bundleWithURL:bundleURL];
+
+		localizedName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+		if(![localizedName isKindOfClass:[NSString class]]) localizedName = nil;
+		if(!localizedName || [localizedName isEqualToString:@""])
+		{
+			localizedName = [bundle objectForInfoDictionaryKey:@"CFBundleName"];
+			if(![localizedName isKindOfClass:[NSString class]]) localizedName = nil;
+			if(!localizedName || [localizedName isEqualToString:@""])
+			{
+				localizedName = [bundle objectForInfoDictionaryKey:@"CFBundleExecutable"];
+				if(![localizedName isKindOfClass:[NSString class]]) localizedName = nil;
+				if(!localizedName || [localizedName isEqualToString:@""])
+				{
+
+					localizedName = self.localizedName;
+				}
+			}
+		}
+	}
+
+	[self setValue:localizedName forKey:@"_localizedName"];
+	return localizedName;
+}
+
+- (NSString*)atl_nameToDisplay
+{
+	NSString* localizedName = [self atl_fastDisplayName];
+
+	if([self.atl_bundleIdentifier rangeOfString:@"carplay" options:NSCaseInsensitiveSearch].location != NSNotFound)
+	{
+		if([localizedName rangeOfString:@"carplay" options:NSCaseInsensitiveSearch range:NSMakeRange(0, localizedName.length) locale:[NSLocale currentLocale]].location == NSNotFound)
+		{
+			return [localizedName stringByAppendingString:@" (CarPlay)"];
+		}
+	}
+
+	return localizedName;
+}
+
+-(id)atl_bundleIdentifier
+{
+
+	if([self respondsToSelector:@selector(bundleIdentifier)])
+	{
+		return [self bundleIdentifier];
+	}
+
+	else
+	{
+		return [self applicationIdentifier];
+	}
+}
+
+@end
+
+@implementation LSApplicationWorkspace (AltList)
+
+- (NSArray*)atl_allInstalledApplications
+{
+	NSString *selfExecutable = safe_getExecutablePath();
+	if ([selfExecutable isEqualToString:@"/usr/libexec/lsd"]) {
+
+		return nil;
+	}
+
+	if(![self respondsToSelector:@selector(enumerateApplicationsOfType:block:)])
+	{
+		return [self allInstalledApplications];
+	}
+
+	NSMutableArray* installedApplications = [NSMutableArray new];
+	[self enumerateApplicationsOfType:0 block:^(LSApplicationProxy* appProxy)
+	{
+		[installedApplications addObject:appProxy];
+	}];
+	[self enumerateApplicationsOfType:1 block:^(LSApplicationProxy* appProxy)
+	{
+		[installedApplications addObject:appProxy];
+	}];
+	return installedApplications;
+}
+
+@end

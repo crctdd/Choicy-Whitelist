@@ -1,0 +1,114 @@
+// Copyright (c) 2019-2021 Lars Fröder
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+#import "CHPApplicationPlugInsListController.h"
+#import "CoreServices.h"
+#import <MobileCoreServices/LSApplicationProxy.h>
+#import <MobileCoreServices/LSPlugInKitProxy.h>
+#import "CHPProcessConfigurationListController.h"
+#import "../Shared.h"
+#import "CHPPreferences.h"
+#import "CHPApplicationListSubcontrollerController.h"
+#import "CHPListController.h"
+
+#import <MobileCoreServices/LSApplicationWorkspace.h>
+#import "CHWLListSupport.h"
+
+@interface LSApplicationWorkspace (CHWLApplicationChanges)
+- (void)addObserver:(id)observer;
+- (void)removeObserver:(id)observer;
+@end
+
+@implementation CHPApplicationPlugInsListController
+- (NSString *)topTitle { return @"应用拓展"; }
+- (void)viewDidLoad
+{
+    [self applySearchControllerHideWhileScrolling:NO];
+    [super viewDidLoad];
+    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(chwlMatchesChanged:) name:CHWLMatchesChanged object:nil];
+    [[LSApplicationWorkspace defaultWorkspace] addObserver:self];
+}
+- (void)dealloc
+{
+    [NSNotificationCenter.defaultCenter removeObserver:self];
+    [[LSApplicationWorkspace defaultWorkspace] removeObserver:self];
+}
+- (void)applicationsDidInstall:(id)info
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self->_appPlugIns = nil;
+        self->_specifiers = nil;
+        if (self.isViewLoaded && self.view.window && self.navigationController.topViewController == self) [self reloadSpecifiers];
+    });
+}
+- (void)applicationsDidUninstall:(id)info { [self applicationsDidInstall:info]; }
+- (void)chwlMatchesChanged:(NSNotification *)note
+{
+    if (self.isViewLoaded && self.view.window && self.navigationController.topViewController == self && CHWLListStateChanged(self)) [self reloadSpecifiers];
+}
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    extern void choicy_reloadPreferences(void);
+    choicy_reloadPreferences();
+    CHWLRefreshMatches();
+    if (CHWLListStateChanged(self)) [self reloadSpecifiers];
+}
+- (void)loadPlugIns
+{
+    NSMutableDictionary *plugins = [NSMutableDictionary new];
+    LSApplicationWorkspace *workspace = [LSApplicationWorkspace defaultWorkspace];
+    NSString *appID = [self.specifier propertyForKey:@"applicationIdentifier"];
+    NSArray *apps = appID ? @[[LSApplicationProxy applicationProxyForIdentifier:appID]] : [workspace allInstalledApplications];
+    for (LSApplicationProxy *app in apps) {
+        for (LSPlugInKitProxy *plugin in [(app.plugInKitPlugins ?: @[]) arrayByAddingObjectsFromArray:app.VPNPlugins ?: @[]]) {
+            if (plugin.bundleIdentifier.length) plugins[plugin.bundleIdentifier] = plugin;
+        }
+    }
+    if (!appID && [workspace respondsToSelector:@selector(pluginsWithIdentifiers:protocols:version:)]) {
+        for (LSPlugInKitProxy *plugin in [workspace pluginsWithIdentifiers:@[] protocols:@[] version:nil]) {
+            if (plugin.bundleIdentifier.length) plugins[plugin.bundleIdentifier] = plugin;
+        }
+    }
+    _appPlugIns = plugins.allValues;
+}
+- (NSMutableArray *)specifiers
+{
+    if (!_specifiers) {
+        if (!_appPlugIns) [self loadPlugIns];
+        NSMutableArray *rows = [NSMutableArray new];
+        for (LSPlugInKitProxy *plugin in _appPlugIns) {
+            NSString *path = [CHPProcessConfigurationListController executablePathForBundleProxy:plugin];
+            NSString *name = plugin.localizedName ?: path.lastPathComponent ?: plugin.bundleIdentifier;
+            if (_searchKey.length && ![name localizedStandardContainsString:_searchKey] &&
+                ![plugin.bundleIdentifier localizedStandardContainsString:_searchKey]) continue;
+            PSSpecifier *row = [PSSpecifier preferenceSpecifierNamed:name target:self set:nil get:nil
+                detail:CHPProcessConfigurationListController.class cell:PSLinkCell edit:nil];
+            [row setProperty:plugin.bundleIdentifier forKey:@"pluginIdentifier"];
+            [row setProperty:@NO forKey:@"chwlPrivilegeEligible"];
+            if (path) [row setProperty:path forKey:@"executablePath"];
+            [rows addObject:row];
+        }
+        _specifiers = CHWLGroupRows(rows, @"应用拓展");
+        CHWLRememberListState(self);
+    }
+    return _specifiers;
+}
+@end

@@ -1,0 +1,64 @@
+"PROCESS_CONFIGURATION" = "Process Configuration";
+
+"APPLICATIONS" = "Applications";
+"DAEMONS" = "Daemons";
+"ADDITIONAL_EXECUTABLES" = "Additional Executables";
+"OVERWRITE_GLOBAL_TWEAK_CONFIGURATION" = "Overwrite Global Tweak Configuration";
+"DISABLE_TWEAK_INJECTION" = "Disable Tweak Injection";
+"LAUNCH_WITHOUT_TWEAKS" = "Launch Without Tweaks";
+"LAUNCH_WITH_TWEAKS" = "Launch With Tweaks";
+"LAUNCH_WITHOUT_TWEAKS_OPTION" = "\"Launch Without Tweaks\" Option";
+"LAUNCH_WITH_TWEAKS_OPTION" = "\"Launch With Tweaks\" Option";
+"APP_OPTIONS" = "App Options";
+"APP_OPTIONS_FOOTER" = "Adds an option to the 3D touch / haptic touch menu of applications with the ability to launch the application once without tweaks. If enabled, the option will turn into \"Launch with Tweaks\" when tweak injection has been disabled inside the process configuration of the application.";
+"CUSTOM_TWEAK_CONFIGURATION" = "Custom Tweak Configuration";
+"ALLOW" = "Allow";
+"DENY" = "Deny";
+"GREYED_OUT_ENTRIES" = "Greyed Out Entries?";
+
+"TWEAKS_DISABLED" = "Tweaks Disabled";
+"CUSTOM" = "Custom";
+"GLOBAL_OVERWRITE" = "Global Overwrite";
+"SHOW_RECOMMENDED_DAEMONS" = "Show Recommended Daemons";
+"SHOW_ALL_DAEMONS" = "Show All Daemons";
+"SYSTEM_APPLICATIONS" = "System Applications";
+"USER_APPLICATIONS" = "User Applications";
+"HIDDEN_APPLICATIONS" = "Hidden Applications";
+"GLOBAL_CONFIGURATION" = "Global Configuration";
+"GLOBAL_TWEAK_CONFIGURATION" = "Global Tweak Configuration";
+"ADDITIONAL_EXECUTABLES_FOOTER" = "Here you can add additional executables (non daemons) and apply tweak configurations to them.\n\nWARNING: This section is for power users, only use it if you know what you are doing.";
+"SELECT_EXECUTABLE" = "Select Executable";
+"SELECT_EXECUTABLE_MESSAGE" = "Specify the path of the executable to add to the list.";
+"ERROR" = "Error";
+"ERROR_FILE_NOT_FOUND" = "No file found at selected path.";
+"ERROR_FILE_NO_EXECUTABLE" = "The file at the selected path does not seem to be an executable.";
+"ERROR_NO_TWEAKS_INJECT" = "The executable you tried to add has no tweaks injecting into it, adding it has been prevented as it would be of no use.";
+"ADD" = "Add";
+"PATH" = "Path";
+"TWEAKS" = "Tweaks";
+"GLOBAL_TWEAK_CONFIGURATION_BOTTOM_NOTICE" = "This global configuration can be overwritten on a per process basis by enabling the \"Overwrite Global Tweak Configuration\" toggle in the preference page of a process.";
+"CREDITS" = "Credits";
+"RESPRING" = "Respring";
+"WARNING_ALERT_TITLE" = "Warning";
+"THE_INJECTION_PLATFORM" = "the injection platform";
+"TWEAKS_LOADING_BEFORE_CHOICY_ALERT_MESSAGE" = "It was determined that disabling certain tweaks with anything but the \"Disable Tweak Injection\" toggle on apps will not work due to %@ loading the tweaks before Choicy, the affected tweaks have been greyed out to avoid confusion.";
+"CHOICYLOADER_ADVICE" = "If you want to work around this issue, install ChoicyLoader from the repo https://opa334.github.io";
+"OPEN_REPO" = "Open Repo";
+"DONT_SHOW_AGAIN" = "Don't Show Again";
+"CLOSE" = "Close";
+"DAEMON_LIST_BOTTOM_NOTICE" = "Daemons that no tweak injects into are automatically hidden";
+"PACKAGE" = "Package";
+"TWEAK_TROUBLESHOOTING_FOOTER" = "If you suspect that Choicy may be preventing a tweak from working correctly, you can select it in this section to find out if any of the tweaks dylibs are being denied from injecting.";
+"CANCEL" = "Cancel";
+"RESET_PREFERENCES" = "Reset Preferences";
+"RESET_PREFERENCES_MESSAGE" = "You are about to irreversibly reset the Choicy preferences. Do you want to continue?";
+"CONTINUE" = "Continue";
+
+"ENABLE_TWEAK_INJECTION" = "Enable Tweak Injection";
+
+"APP_PLUGINS" = "Application Extensions";
+
+"REBUILD_PROCESS_CACHE" = "Rebuild Process Cache";
+
+"PROCESS_CONFIGURATION_FOOTER" = "· Tweak injection is disabled by default.\n· Enable injection to also use custom tweak configuration.\n· Privileged tweaks are UIKit tweaks and apply only to visible Applications.";
+"DISABLE_PRIVILEGED_TWEAKS" = "Disable Privileged Tweaks";
