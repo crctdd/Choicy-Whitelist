@@ -36,7 +36,7 @@
 "ADD" = "新增";
 "PATH" = "路徑";
 "TWEAKS" = "插件";
-"GLOBAL_TWEAK_CONFIGURATION_BOTTOM_NOTICE" = "開啟「覆寫全域插件設定」 選項可以自訂每個行程的全域設定。";
+"GLOBAL_TWEAK_CONFIGURATION_BOTTOM_NOTICE" = "· 此全局配置可以通过在设置页面中启用“覆盖全局插件配置”开关来进行逐个覆盖，至少在“全局插件配置”(本页面)中禁用一个插件，方可使用此功能。\n· 点击条目可显示该插件的注入目标。";
 "CREDITS" = "貢獻";
 "RESPRING" = "重新啟動主畫面";
 "WARNING_ALERT_TITLE" = "警告";

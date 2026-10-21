@@ -36,7 +36,7 @@
 "ADD" = "添加";
 "PATH" = "路径";
 "TWEAKS" = "插件";
-"GLOBAL_TWEAK_CONFIGURATION_BOTTOM_NOTICE" = "此全局配置可以通过在进程的首选项页面中启用「覆盖全局插件配置」开关来进行逐个进程的覆盖。";
+"GLOBAL_TWEAK_CONFIGURATION_BOTTOM_NOTICE" = "· 此全局配置可以通过在设置页面中启用“覆盖全局插件配置”开关来进行逐个覆盖，至少在“全局插件配置”(本页面)中禁用一个插件，方可使用此功能。\n· 点击条目可显示该插件的注入目标。";
 "CREDITS" = "致谢";
 "RESPRING" = "注销";
 "WARNING_ALERT_TITLE" = "警告";
