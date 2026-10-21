@@ -281,7 +281,7 @@
 {
     PSSpecifier *enabled = [self specifierForID:@"ENABLE_TWEAK_INJECTION"];
     [enabled setProperty:@(!CHInjectionIsForced(_appIdentifier ?: _pluginIdentifier, self.executablePath)) forKey:@"enabled"];
-
+     
     PSSpecifier *custom = [self specifierForID:@"CUSTOM_TWEAK_CONFIGURATION"];
     [custom setProperty:@(CHInjectionEnabled(preferences, _appIdentifier ?: _pluginIdentifier, self.executablePath)) forKey:@"enabled"];
     PSSpecifier *disablePrivilege = [self specifierForID:@"DISABLE_PRIVILEGED_TWEAKS"];

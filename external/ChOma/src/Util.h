@@ -14,6 +14,7 @@ typedef struct s_optional_uint64 {
 #define OPT_UINT64_NONE (optional_uint64_t){.isSet = false, .value = 0}
 #define OPT_UINT64(x) (optional_uint64_t){.isSet = true, .value = x}
 
+
 typedef struct s_optional_bool {
 	bool isSet;
 	bool value;

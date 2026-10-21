@@ -29,6 +29,16 @@
 #import "CHWLData.h"
 #import "CHWLFrameworkSupport.h"
 #import "CHWLExecutableInfo.h"
+#import "CHWLComponentSupport.h"
+#import "CHWLExtensionRegistry.h"
+#import "CHWLListSupport.h"
+#import <MobileCoreServices/LSApplicationWorkspace.h>
+
+NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsChanged";
+
+@interface LSApplicationWorkspace (CHWLExtensionChanges)
+- (void)addObserver:(id)observer;
+@end
 #import <sys/sysctl.h>
 
 @interface CHPDaemonList ()
@@ -36,6 +46,15 @@
 @property (atomic, readwrite) BOOL loaded;
 @property (atomic, readwrite) BOOL loading;
 @property (atomic, readwrite) NSArray *daemonList;
+@property (atomic, readwrite) NSArray<NSDictionary *> *extensionList;
+@property (atomic, readwrite) NSArray<NSDictionary *> *applicationExtensions;
+@property (nonatomic) NSDictionary *applicationExtensionEntry;
+@property (nonatomic) BOOL applicationExtensionsInvalidated;
+- (NSDictionary *)applicationExtensionContext;
+@property (nonatomic) NSDictionary *loadedContext;
+@property (nonatomic) BOOL componentCatalogComplete;
+@property (nonatomic) BOOL catalogScanAttempted;
+- (void)mergeComponentScan:(NSDictionary *)components intoDaemons:(NSMutableArray *)daemons;
 @property (nonatomic) NSMutableDictionary *frameworkMatches;
 @property (nonatomic) BOOL bundleIdentifiersComplete;
 - (void)completeBundleIdentifiers;
@@ -48,7 +67,7 @@
 	static CHPDaemonList *sharedInstance = nil;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^ {
-
+		 
 		sharedInstance = [[CHPDaemonList alloc] init];
 	});
 	return sharedInstance;
@@ -61,6 +80,8 @@
 	_observers = [NSHashTable weakObjectsHashTable];
     _scanLock = [NSRecursiveLock new];
     _frameworkMatches = [NSMutableDictionary new];
+    _extensionList = @[];
+    [[LSApplicationWorkspace defaultWorkspace] addObserver:self];
 
 	return self;
 }
@@ -83,8 +104,24 @@
     if (sysctlbyname("kern.osversion", build, &size, NULL, 0) != 0) return nil;
     NSString *cachePath = kChoicyProcessCachePath;
     if (!cachePath) return nil;
-    return @{@"osBuild": [NSString stringWithUTF8String:build],
-        @"preferencesDirectory": cachePath.stringByDeletingLastPathComponent};
+    NSMutableDictionary *sources = [NSMutableDictionary new];
+    NSMutableArray *directories = [CHWLSystemComponentDirectories() mutableCopy];
+    [directories addObjectsFromArray:@[@"/System/Library/LaunchDaemons", @"/System/Library/NanoLaunchDaemons", @"/Library/LaunchDaemons"]];
+    NSString *jailbreakDirectory = jbroot(@"/Library/LaunchDaemons");
+    if (jailbreakDirectory.length) [directories addObject:jailbreakDirectory];
+    for (NSString *directory in directories) {
+        NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:directory error:nil];
+        if (attributes) sources[directory] = @[attributes[NSFileModificationDate] ?: NSDate.distantPast];
+        if (![directory.lastPathComponent hasSuffix:@"LaunchDaemons"]) continue;
+        for (NSString *file in [NSFileManager.defaultManager contentsOfDirectoryAtPath:directory error:nil]) {
+            if (![file.pathExtension isEqual:@"plist"]) continue;
+            NSString *source = [directory stringByAppendingPathComponent:file];
+            NSDictionary *attrs = [NSFileManager.defaultManager attributesOfItemAtPath:source error:nil];
+            if (attrs) sources[source] = @[attrs[NSFileSize] ?: @0, attrs[NSFileModificationDate] ?: NSDate.distantPast];
+        }
+    }
+    return @{@"osBuild": [NSString stringWithUTF8String:build], @"componentCatalogVersion": @1,
+        @"sources": sources.copy, @"preferencesDirectory": cachePath.stringByDeletingLastPathComponent};
 }
 - (BOOL)restoreCache
 {
@@ -95,8 +132,10 @@
     if (!size || size.unsignedLongLongValue > 8 * 1024 * 1024) return NO;
     NSData *data = [NSData dataWithContentsOfFile:path];
     id cache = data ? [NSPropertyListSerialization propertyListWithData:data options:0 format:NULL error:nil] : nil;
+    if (![cache isKindOfClass:NSDictionary.class]) return NO;
     NSArray *records = CHWLValidatedRecords(cache, context);
-    if (!records) return NO;
+    NSArray *extensions = CHWLValidatedExtensionRecords([cache objectForKey:@"extensions"]);
+    if (!records || !extensions) return NO;
     id frameworkMatches = [cache objectForKey:@"frameworkMatches"];
     self.frameworkMatches = [frameworkMatches isKindOfClass:NSDictionary.class] ? [frameworkMatches mutableCopy] : [NSMutableDictionary new];
     NSMutableArray *list = [NSMutableArray new];
@@ -108,6 +147,13 @@
         [list addObject:info];
     }
     self.daemonList = list.copy;
+    self.extensionList = extensions;
+    self.loadedContext = context;
+    self.applicationExtensionEntry = [cache[@"applicationExtensionPage"] isKindOfClass:NSDictionary.class] ? cache[@"applicationExtensionPage"] : nil;
+    NSArray *page = CHWLRestoreApplicationExtensions(self.applicationExtensionEntry, [self applicationExtensionContext]);
+    if (page) self.applicationExtensions = page;
+    self.componentCatalogComplete = [cache[@"componentCatalogComplete"] boolValue];
+    self.catalogScanAttempted = NO;
     self.bundleIdentifiersComplete = [cache[@"bundleIdentifierVersion"] isEqual:@(CHWLProcessBundleIdentifierVersion)];
     self.loaded = YES;
     self.loading = NO;
@@ -115,7 +161,7 @@
 }
 - (void)saveCache
 {
-    NSDictionary *context = [self cacheContext];
+    NSDictionary *context = self.loadedContext ?: [self cacheContext];
     NSString *path = kChoicyProcessCachePath;
     if (!context || !path || !_loaded || _loading || !_daemonList.count) return;
     NSMutableArray *records = [NSMutableArray new];
@@ -125,14 +171,88 @@
         if (info.bundleIdentifier.length) record[@"bundleIdentifier"] = info.bundleIdentifier;
         [records addObject:record];
     }
-    NSDictionary *cache = @{@"schemaVersion": @(CHWLProcessCacheSchemaVersion), @"scanComplete": @YES, @"context": context,
-        @"processes": records, @"frameworkMatches": self.frameworkMatches.copy,
-        @"bundleIdentifierVersion": @(self.bundleIdentifiersComplete ? CHWLProcessBundleIdentifierVersion : 0)};
+    NSMutableDictionary *cache = [@{@"schemaVersion": @(CHWLProcessCacheSchemaVersion), @"scanComplete": @YES, @"context": context,
+        @"processes": records, @"extensions": self.extensionList ?: @[], @"frameworkMatches": self.frameworkMatches.copy,
+        @"componentCatalogComplete": @(self.componentCatalogComplete),
+        @"bundleIdentifierVersion": @(self.bundleIdentifiersComplete ? CHWLProcessBundleIdentifierVersion : 0)} mutableCopy];
+    if (self.applicationExtensionEntry) cache[@"applicationExtensionPage"] = self.applicationExtensionEntry;
     if (!CHWLValidatedRecords(cache, context)) return;
     [NSFileManager.defaultManager createDirectoryAtPath:path.stringByDeletingLastPathComponent withIntermediateDirectories:YES attributes:nil error:nil];
     NSData *data = [NSPropertyListSerialization dataWithPropertyList:cache format:NSPropertyListBinaryFormat_v1_0 options:0 error:nil];
+    while (data.length > 8 * 1024 * 1024 && self.frameworkMatches.count) {
+        NSArray *oldest = [self.frameworkMatches.allKeys sortedArrayUsingComparator:^NSComparisonResult(NSString *a, NSString *b) {
+            id first = self.frameworkMatches[a][@"cachedAt"], second = self.frameworkMatches[b][@"cachedAt"];
+            NSDate *left = [first isKindOfClass:NSDate.class] ? first : NSDate.distantPast;
+            NSDate *right = [second isKindOfClass:NSDate.class] ? second : NSDate.distantPast;
+            NSComparisonResult order = [left compare:right];
+            return order == NSOrderedSame ? [a compare:b] : order;
+        }];
+        [self.frameworkMatches removeObjectsForKeys:[oldest subarrayWithRange:NSMakeRange(0, MAX(1, oldest.count / 2))]];
+        cache[@"frameworkMatches"] = self.frameworkMatches.copy;
+        data = [NSPropertyListSerialization dataWithPropertyList:cache format:NSPropertyListBinaryFormat_v1_0 options:0 error:nil];
+    }
     if (data.length <= 8 * 1024 * 1024) [data writeToFile:path options:NSDataWritingAtomic error:nil];
 }
+- (NSDictionary *)applicationExtensionContext
+{
+    NSMutableDictionary *sources = [NSMutableDictionary new];
+    NSMutableArray *directories = [@[@"/var/containers/Bundle/Application", @"/Applications", @"/System/Applications",
+        @"/System/Library/CoreServices"] mutableCopy];
+    NSString *jailbreakApplications = jbroot(@"/Applications");
+    if (jailbreakApplications.length) [directories addObject:jailbreakApplications];
+    for (NSString *directory in directories) {
+        NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:directory error:nil];
+        sources[directory] = attributes ? @[attributes[NSFileModificationDate] ?: NSDate.distantPast,
+            attributes[NSFileSystemFileNumber] ?: @0] : @[];
+    }
+    return @{@"osBuild": self.loadedContext[@"osBuild"] ?: @"", @"sources": sources.copy,
+        @"languages": NSLocale.preferredLanguages, @"locale": NSLocale.currentLocale.localeIdentifier,
+        @"preferencesDirectory": kChoicyProcessCachePath.stringByDeletingLastPathComponent ?: @"",
+        @"systemExtensions": self.extensionList ?: @[]};
+}
+
+- (void)applicationsDidInstall:(id)info
+{
+    (void)info;
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        [self.scanLock lock];
+        @try { self.applicationExtensionEntry = nil; self.applicationExtensionsInvalidated = YES; }
+        @finally { [self.scanLock unlock]; }
+        [CHPTweakList.sharedInstance invalidateAllCandidateAnalyses];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [NSNotificationCenter.defaultCenter postNotificationName:CHWLMatchesChanged object:nil];
+        });
+        [self prepareApplicationExtensionsIfNeeded];
+    });
+}
+- (void)applicationsDidUninstall:(id)info { [self applicationsDidInstall:info]; }
+
+- (void)prepareApplicationExtensionsIfNeeded
+{
+    [self.scanLock lock];
+    @try {
+        if (!_loaded && !_loading) [self restoreCache];
+        if (self.applicationExtensionsInvalidated) self.applicationExtensionEntry = nil;
+        NSDictionary *context = [self applicationExtensionContext];
+        NSArray *cached = CHWLRestoreApplicationExtensions(self.applicationExtensionEntry, context);
+        if (cached) { self.applicationExtensions = cached; return; }
+        [self updateDaemonListIfNeeded];
+        context = [self applicationExtensionContext];
+        NSArray *registered = CHWLRegisteredExtensionRecords(nil);
+        if (!registered) return;
+        NSArray *snapshot = CHWLMergeExtensionRecords(registered, self.extensionList);
+        BOOL changed = ![self.applicationExtensions isEqual:snapshot];
+        self.applicationExtensions = snapshot;
+        self.applicationExtensionEntry = [context isEqual:[self applicationExtensionContext]] ?
+            CHWLApplicationExtensionCacheEntry(snapshot, context) : nil;
+        self.applicationExtensionsInvalidated = self.applicationExtensionEntry == nil;
+        [self saveCache];
+        if (changed) dispatch_async(dispatch_get_main_queue(), ^{
+            [NSNotificationCenter.defaultCenter postNotificationName:CHWLApplicationExtensionsChanged object:self];
+        });
+    } @finally { [self.scanLock unlock]; }
+}
+
 - (BOOL)loadCachedDaemonListIfNeeded
 {
     if (![self.scanLock tryLock]) return NO;
@@ -143,7 +263,7 @@
 }
 - (NSSet *)cachedFrameworkIdentifiersForPath:(NSString *)path signature:(NSDictionary *)signature
 {
-
+     
     [self.scanLock lock];
     @try {
         if (!_loaded && !_loading) [self restoreCache];
@@ -151,13 +271,25 @@
         return identifiers ? [NSSet setWithArray:identifiers] : nil;
     } @finally { [self.scanLock unlock]; }
 }
-- (void)cacheFrameworkIdentifiers:(NSSet *)identifiers forPath:(NSString *)path signature:(NSDictionary *)signature
+- (void)cacheFrameworkAnalysis:(NSDictionary *)analysis forPath:(NSString *)path signature:(NSDictionary *)signature
 {
-    if (!path.length || !identifiers || !signature) return;
+    NSSet *identifiers = analysis[@"identifiers"];
+    if (!path.length || !identifiers || !signature || ![analysis[@"complete"] boolValue] ||
+        !CHWLInputSignaturesAreCurrent(analysis[@"inputs"])) return;
     [self.scanLock lock];
     @try {
         self.frameworkMatches[path] = @{@"version": @(CHWLFrameworkCacheEntryVersion), @"signature": signature,
-            @"identifiers": [identifiers.allObjects sortedArrayUsingSelector:@selector(compare:)]};
+            @"identifiers": [identifiers.allObjects sortedArrayUsingSelector:@selector(compare:)], @"inputs": analysis[@"inputs"],
+            @"cachedAt": NSDate.date};
+        [self saveCache];
+    } @finally { [self.scanLock unlock]; }
+}
+- (void)invalidateFrameworkIdentifiersForPath:(NSString *)path
+{
+    if (!path.length) return;
+    [self.scanLock lock];
+    @try {
+        [self.frameworkMatches removeObjectForKey:path];
         [self saveCache];
     } @finally { [self.scanLock unlock]; }
 }
@@ -167,13 +299,26 @@
     @try {
         if (_loading) return;
         BOOL wasLoaded = _loaded;
+        if (_loaded && ![self.loadedContext isEqual:[self cacheContext]]) {
+            self.loaded = NO;
+            [self.frameworkMatches removeAllObjects];
+        }
         if (_loaded || [self restoreCache]) {
             BOOL upgraded = !self.bundleIdentifiersComplete;
             if (upgraded) {
                 [self completeBundleIdentifiers];
                 [self saveCache];
             }
-            if (!wasLoaded || upgraded) [self sendReloadToObservers];
+            BOOL retried = !self.componentCatalogComplete && !self.catalogScanAttempted;
+            if (retried) {
+                NSMutableArray *daemons = self.daemonList.mutableCopy;
+                [self mergeComponentScan:CHWLScanSystemComponents(CHWLSystemComponentDirectories()) intoDaemons:daemons];
+                self.daemonList = [daemons sortedArrayUsingComparator:^NSComparisonResult(CHPDaemonInfo *a, CHPDaemonInfo *b) {
+                    return [a.executableName localizedCaseInsensitiveCompare:b.executableName];
+                }];
+                [self saveCache];
+            }
+            if (!wasLoaded || upgraded || retried) [self sendReloadToObservers];
             return;
         }
         [self scanDaemonList];
@@ -183,7 +328,7 @@
 
 - (void)completeBundleIdentifiers
 {
-
+     
     NSMutableArray *records = [NSMutableArray new];
     for (CHPDaemonInfo *info in self.daemonList) {
         NSMutableDictionary *record = [@{@"executablePath": info.executablePath} mutableCopy];
@@ -202,9 +347,23 @@
         info.bundleIdentifier = record[@"bundleIdentifier"];
         [updated addObject:info];
     }
-
+     
     self.daemonList = updated.copy;
     self.bundleIdentifiersComplete = YES;
+}
+
+- (void)mergeComponentScan:(NSDictionary *)components intoDaemons:(NSMutableArray *)daemons
+{
+    self.catalogScanAttempted = YES;
+    self.componentCatalogComplete = [components[@"complete"] boolValue];
+    self.extensionList = self.componentCatalogComplete ? components[@"extensions"] :
+        CHWLMergeExtensionRecords(components[@"extensions"], self.extensionList);
+    for (NSDictionary *record in components[@"services"]) {
+        CHPDaemonInfo *info = [CHPDaemonInfo new];
+        info.executablePath = record[@"executablePath"];
+        info.bundleIdentifier = record[@"bundleIdentifier"];
+        if (![self daemonList:daemons containsExecutableName:info.executableName]) [daemons addObject:info];
+    }
 }
 
 - (void)scanDaemonList
@@ -217,6 +376,7 @@
 
 	self.loading = YES;
 
+     
     NSMutableArray<NSURL *> *daemonPlists = [NSMutableArray new];
     NSMutableArray<NSString *> *directories = [@[@"/System/Library/LaunchDaemons",
         @"/System/Library/NanoLaunchDaemons", @"/Library/LaunchDaemons"] mutableCopy];
@@ -238,7 +398,7 @@
 
 	for (NSURL *daemonPlistURL in daemonPlists) {
 		NSDictionary *daemonDictionary = [NSDictionary dictionaryWithContentsOfURL:daemonPlistURL];
-
+		
 		CHPDaemonInfo *info = [[CHPDaemonInfo alloc] init];
 
 		info.executablePath = [daemonDictionary objectForKey:@"Program"];
@@ -258,6 +418,7 @@
         }
 		info.plistIdentifier = [daemonDictionary objectForKey:@"Label"] ?: [daemonPlistURL lastPathComponent].stringByDeletingPathExtension;
 
+		 
 		if (info.executablePath && [[NSFileManager defaultManager] fileExistsAtPath:info.executablePath] && ![info.plistIdentifier hasSuffix:@"Jetsam"] && ![info.plistIdentifier hasSuffix:@"SimulateCrash"] && ![info.plistIdentifier hasSuffix:@"_v2"] && ![info.plistIdentifier isEqualToString:kSpringboardBundleID]) {
 			if (![self daemonList:daemonListM containsExecutableName:info.executableName]) {
 				[daemonListM addObject:info];
@@ -265,66 +426,13 @@
 		}
 	}
 
-	NSDirectoryEnumerator *systemLibraryFrameworksEnumerator = [[NSFileManager defaultManager] enumeratorAtURL:[NSURL fileURLWithPath:@"/System/Library/Frameworks" isDirectory:YES] includingPropertiesForKeys:nil options:0 errorHandler:^(NSURL *url, NSError *error) {
-		return YES;
-	}];
-
-	NSDirectoryEnumerator *cryptexSystemLibraryFrameworksEnumerator = [[NSFileManager defaultManager] enumeratorAtURL:[NSURL fileURLWithPath:@"/private/preboot/Cryptexes/OS/System/Library/Frameworks" isDirectory:YES] includingPropertiesForKeys:nil options:0 errorHandler:^(NSURL *url, NSError *error) {
-		return YES;
-	}];
-
-	NSDirectoryEnumerator *systemLibraryPrivateFrameworksEnumerator = [[NSFileManager defaultManager] enumeratorAtURL:[NSURL fileURLWithPath:@"/System/Library/PrivateFrameworks" isDirectory:YES] includingPropertiesForKeys:nil options:0 errorHandler:^(NSURL *url, NSError *error) {
-		return YES;
-	}];
-
-	NSDirectoryEnumerator *cryptexSystemLibraryPrivateFrameworksEnumerator = [[NSFileManager defaultManager] enumeratorAtURL:[NSURL fileURLWithPath:@"/private/preboot/Cryptexes/OS/System/Library/PrivateFrameworks" isDirectory:YES] includingPropertiesForKeys:nil options:0 errorHandler:^(NSURL *url, NSError *error) {
-		return YES;
-	}];
-
-	NSMutableArray *XPCUrls = [NSMutableArray new];
-
-	for (NSURL *fileURL in systemLibraryFrameworksEnumerator) {
-		if ([fileURL.path hasSuffix:@".xpc"]) {
-			[XPCUrls addObject:fileURL];
-		}
-	}
-
-	for (NSURL *fileURL in cryptexSystemLibraryFrameworksEnumerator) {
-		if ([fileURL.path hasSuffix:@".xpc"]) {
-			[XPCUrls addObject:fileURL];
-		}
-	}
-
-	for (NSURL *fileURL in systemLibraryPrivateFrameworksEnumerator) {
-		if ([fileURL.path hasSuffix:@".xpc"]) {
-			[XPCUrls addObject:fileURL];
-		}
-	}
-
-	for (NSURL *fileURL in cryptexSystemLibraryPrivateFrameworksEnumerator) {
-		if ([fileURL.path hasSuffix:@".xpc"]) {
-			[XPCUrls addObject:fileURL];
-		}
-	}
-
-	for (NSURL *XPCUrl in XPCUrls) {
-		NSString *XPCPath = XPCUrl.path;
-
-		NSString *XPCName = [XPCUrl.lastPathComponent stringByReplacingOccurrencesOfString:@".xpc" withString:@""];
-
-		NSString *XPCExecutablePath = [XPCPath stringByAppendingPathComponent:XPCName];
-
-		if ([[NSFileManager defaultManager] fileExistsAtPath:XPCExecutablePath]) {
-			CHPDaemonInfo *info = [[CHPDaemonInfo alloc] init];
-			info.executablePath = XPCExecutablePath;
-
-			if (![self daemonList:daemonListM containsExecutableName:info.executableName]) {
-				[daemonListM addObject:info];
-			}
-		}
-	}
+    [self mergeComponentScan:CHWLScanSystemComponents(CHWLSystemComponentDirectories()) intoDaemons:daemonListM];
 
 	NSMutableArray *additionalPotentialDaemons = [NSMutableArray new];
+
+	 
+
+
 
 	DIR *dir;
     struct dirent *dp;
@@ -358,11 +466,13 @@
 		}
 	}
 
-	[daemonListM sortUsingComparator:^NSComparisonResult(CHPDaemonInfo *a, CHPDaemonInfo *b) {
+	[daemonListM sortUsingComparator:^NSComparisonResult(CHPDaemonInfo *a, CHPDaemonInfo *b) {  
 		return [[a executableName] localizedCaseInsensitiveCompare:[b executableName]];
 	}];
 
 	HBLogDebugWeak(@"updateDaemonListIfNeeded loaded files");
+
+
 
 	for (CHPDaemonInfo *daemonInfo in [daemonListM reverseObjectEnumerator]) {
 		if (![[NSFileManager defaultManager] isExecutableFileAtPath:daemonInfo.executablePath]) {
@@ -371,6 +481,7 @@
 	}
 
 	self.daemonList = [daemonListM copy];
+    self.loadedContext = [self cacheContext];
     [self completeBundleIdentifiers];
 	self.loading = NO;
 	self.loaded = _daemonList.count > 0;

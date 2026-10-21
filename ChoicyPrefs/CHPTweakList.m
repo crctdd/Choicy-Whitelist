@@ -28,6 +28,7 @@
 #import "CHWLTargetIndex.h"
 #import "CHWLExecutableInfo.h"
 #import "CHWLData.h"
+#import "CHWLCandidateAnalysisCache.h"
 
 @interface CHPTweakList ()
 @property (nonatomic) NSDictionary *targetIndex;
@@ -35,6 +36,7 @@
 @property (nonatomic) NSDictionary *fileFingerprint;
 @property (nonatomic) NSRecursiveLock *updateLock;
 @property (atomic, readwrite) NSUInteger targetGeneration;
+@property (nonatomic) CHWLCandidateAnalysisCache *candidateAnalysisCache;
 @end
 
 @implementation CHPTweakList
@@ -44,7 +46,7 @@
 	static CHPTweakList *sharedInstance = nil;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^ {
-
+		 
 		sharedInstance = [[CHPTweakList alloc] init];
 	});
 	return sharedInstance;
@@ -56,6 +58,7 @@
 		return @[jbroot([@"/" stringByAppendingString:@"Library/MobileSubstrate/DynamicLibraries"]), jbroot([@"/" stringByAppendingString:@"usr/lib/TweakInject"])];
 	}
 
+	 
 	return @[[@"/" stringByAppendingString:@"Library/MobileSubstrate/DynamicLibraries"], [@"/" stringByAppendingString:@"usr/lib/TweakInject"], @"/var/jb/Library/MobileSubstrate/DynamicLibraries", @"/var/jb/usr/lib/TweakInject"];
 }
 
@@ -91,6 +94,7 @@
 	self = [super init];
 	if (self) {
 		_updateLock = [NSRecursiveLock new];
+        _candidateAnalysisCache = [CHWLCandidateAnalysisCache new];
 		[self updateTweakList];
 	}
 	return self;
@@ -129,6 +133,7 @@
         self.targetIndex = index;
         self.tweaksByName = byName.copy;
         self.targetGeneration++;
+        [self.candidateAnalysisCache invalidateAll];
     }
     self.fileFingerprint = [self currentFileFingerprint];
     } @finally { [self.updateLock unlock]; }
@@ -176,13 +181,37 @@
 
 - (NSDictionary *)candidateAnalysisForExecutableAtPath:(NSString *)executablePath
 {
+    executablePath = executablePath.stringByStandardizingPath;
+    NSDictionary *cached = [self cachedCandidateAnalysisForExecutableAtPath:executablePath];
+    if (cached) return cached;
+    NSUInteger revision;
+    NSArray *snapshot;
+    @synchronized (self) {
+        revision = self.candidateAnalysisCache.revision;
+        snapshot = self.tweakList;
+    }
     NSDictionary *analysis = [[CHPMachoParser sharedInstance] frameworkAnalysisForMachoAtPath:executablePath];
     NSString *bundleID = CHWLBundleIdentifierForExecutable(executablePath);
-    NSArray *snapshot = self.tweakList;
     NSArray *matches = CHWLMatchingConfigurationTweaks(snapshot, bundleID, executablePath.lastPathComponent,
         analysis[@"identifiers"]);
-    return @{@"matches": matches, @"complete": analysis[@"complete"], @"failures": analysis[@"failures"]};
+    NSMutableDictionary *reasons = [NSMutableDictionary new];
+    for (CHPTweakInfo *tweak in matches) reasons[tweak.dylibName] = CHWLMatchReasons(tweak,
+        bundleID, executablePath.lastPathComponent, analysis[@"identifiers"]);
+    NSDictionary *result = @{@"matches": matches, @"reasons": reasons.copy, @"identifiers": analysis[@"identifiers"],
+        @"inputs": analysis[@"inputs"] ?: @{}, @"complete": analysis[@"complete"], @"failures": analysis[@"failures"]};
+    [self.candidateAnalysisCache storeAnalysis:result forPath:executablePath revision:revision];
+    return result;
 }
+
+- (NSDictionary *)cachedCandidateAnalysisForExecutableAtPath:(NSString *)executablePath
+{
+    return [self.candidateAnalysisCache cachedAnalysisForPath:executablePath];
+}
+- (void)invalidateCandidateAnalysisForExecutableAtPath:(NSString *)executablePath
+{
+    [self.candidateAnalysisCache invalidatePath:executablePath];
+}
+- (void)invalidateAllCandidateAnalyses { [self.candidateAnalysisCache invalidateAll]; }
 
 - (NSArray *)tweakListForExecutableAtPath:(NSString *)executablePath
 {
@@ -195,7 +224,7 @@
 		if ([tweakInfo.dylibName containsString:@"Choicy"]) {
 			continue;
 		}
-
+		
 		return YES;
 	}
 

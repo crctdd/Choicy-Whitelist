@@ -112,7 +112,7 @@ int arm64_gen_b_c_cond(optional_bool optIsBc, optional_uint64_t optOrigin, optio
         uint64_t origin = OPT_UINT64_GET_VAL(optOrigin);
         uint64_t target = OPT_UINT64_GET_VAL(optTarget);
         int64_t offset = (int64_t)target - (int64_t)origin;
-        if (offset < -0x100000 || offset > 0x100000) return -1;
+        if (offset < -0x100000 || offset > 0x100000) return -1;  
         inst |= ((offset / 4) << 5);
         mask |= (0x7ffff << 5);
     }
@@ -166,7 +166,7 @@ int arm64_gen_adr_p(optional_bool optIsAdrp, optional_uint64_t optOrigin, option
 
     if (OPT_UINT64_IS_SET(optOrigin) && OPT_UINT64_IS_SET(optTarget)) {
         mask |= 0x60ffffe0;
-
+        
         uint64_t origin = OPT_UINT64_GET_VAL(optOrigin);
         uint64_t target = OPT_UINT64_GET_VAL(optTarget);
         if (isAdrp) {
@@ -179,7 +179,7 @@ int arm64_gen_adr_p(optional_bool optIsAdrp, optional_uint64_t optOrigin, option
         }
 
         if ((offset & ~0x7ffff)) {
-
+             
             return -1;
         }
 
@@ -231,7 +231,7 @@ int arm64_gen_mov_imm(char type, arm64_register destinationReg, optional_uint64_
     if (ARM64_REG_IS_ANY_VECTOR(destinationReg)) return -1;
 
     uint32_t inst = 0x12800000;
-    uint32_t mask = 0x7f800000;
+    uint32_t mask = 0x7f800000;  
 
     switch (type) {
         case 'k': {
@@ -313,7 +313,7 @@ int arm64_dec_mov_imm(uint32_t inst, arm64_register *destinationRegOut, uint64_t
         default: {
             return -1;
         }
-    }
+    } 
 
     if (destinationRegOut) {
         bool is64 = inst & (1 << 31);
@@ -380,13 +380,14 @@ int arm64_gen_add_imm(arm64_register destinationReg, arm64_register sourceReg, o
     if (ARM64_REG_IS_ANY_VECTOR(sourceReg)) return -1;
 
     if (!ARM64_REG_IS_ANY(destinationReg) && !ARM64_REG_IS_ANY(sourceReg)) {
-
+         
         if (ARM64_REG_IS_W(destinationReg) != ARM64_REG_IS_W(sourceReg)) return -1;
     }
 
     uint32_t inst = 0x11000000;
     uint32_t mask = 0x7f800000;
 
+     
     if (!ARM64_REG_IS_ANY(destinationReg)) {
         mask |= (1 << 31);
         inst |= ((uint32_t)(ARM64_REG_IS_X(destinationReg)) << 31);
@@ -452,7 +453,7 @@ static int _arm64_gen_str_ldr_imm(uint32_t inst, uint32_t mask, char type, arm64
         }
         else if (ARM64_REG_IS_ANY(sourceDestinationReg)) {
             mask |= (1 << 23) | (1 << 26);
-
+             
         }
         else {
             inst |= ARM64_REG_GET_NUM(sourceDestinationReg);
@@ -461,7 +462,7 @@ static int _arm64_gen_str_ldr_imm(uint32_t inst, uint32_t mask, char type, arm64
             bool isVector = ARM64_REG_IS_VECTOR(sourceDestinationReg);
             if (isVector && type != 0) return -1;
             mask |= (1 << 23) | (1 << 26) | (0b11 << 30);
-            inst |= (isVector << 26);
+            inst |= (isVector << 26);            
 
             uint8_t size = 0b00;
 
@@ -510,6 +511,7 @@ static int _arm64_gen_str_ldr_imm(uint32_t inst, uint32_t mask, char type, arm64
     if (instType != LDR_STR_TYPE_ANY) {
         mask |= (1 << 24);
         if (instType == LDR_STR_TYPE_PRE_INDEX || instType == LDR_STR_TYPE_POST_INDEX) {
+             
 
             mask |= (1 << 10) | (1 << 11);
             inst |= (1 << 10) | ((instType == LDR_STR_TYPE_PRE_INDEX) << 11);

@@ -58,11 +58,13 @@ extern BOOL CHApplicationSupportsPrivilege(NSString *identifier);
 #define kChoicyProcessPrefsKeyAllowedTweaks @"allowedTweaks"
 #define kChoicyProcessPrefsKeyOverwriteGlobalTweakConfiguration @"overwriteGlobalTweakConfiguration"
 
+ 
 #define kChoicyPrefsKeyGlobalDeniedTweaks_LEGACY @"globalTweakBlacklist"
 #define kChoicyProcessPrefsKeyAllowDenyMode_LEGACY @"whitelistBlacklistSegment"
 #define kChoicyProcessPrefsKeyDeniedTweaks_LEGACY @"tweakBlacklist"
 #define kChoicyProcessPrefsKeyAllowedTweaks_LEGACY @"tweakWhitelist"
 
+ 
 #define kChoicyPrefMigration1_4_ChangedKeys @{kChoicyPrefsKeyGlobalDeniedTweaks_LEGACY : kChoicyPrefsKeyGlobalDeniedTweaks}
 #define kChoicyPrefMigration1_4_RemovedKeys @[@"allowBlacklistOverwrites", @"allowWhitelistOverwrites"]
 #define kChoicyProcessPrefMigration1_4_ChangedKeys @{kChoicyProcessPrefsKeyAllowDenyMode_LEGACY : kChoicyProcessPrefsKeyAllowDenyMode, kChoicyProcessPrefsKeyDeniedTweaks_LEGACY : kChoicyProcessPrefsKeyDeniedTweaks, kChoicyProcessPrefsKeyAllowedTweaks_LEGACY : kChoicyProcessPrefsKeyAllowedTweaks}

@@ -144,7 +144,7 @@ NSString *getInjectionPlatform()
         UIImageSymbolConfiguration *configuration = [UIImageSymbolConfiguration configurationWithTextStyle:UIFontTextStyleBody
             scale:UIImageSymbolScaleLarge];
         UIImage *glyph = [UIImage systemImageNamed:symbol withConfiguration:configuration];
-
+         
         UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(32, 32)];
         UIImage *icon = [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
             if (!glyph || glyph.size.width <= 0 || glyph.size.height <= 0) return;
@@ -192,7 +192,7 @@ NSString *getInjectionPlatform()
 	}];
 
 	UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:localize(@"CANCEL") style:UIAlertActionStyleDefault handler:nil];
-
+	
 	[resetPreferencesAlert addAction:continueAction];
 	[resetPreferencesAlert addAction:cancelAction];
 
@@ -228,7 +228,7 @@ void presentNotLoadingFirstWarning(PSListController *plc, BOOL showDontShowAgain
 		}
 
 		UIAlertController *warningAlert = [UIAlertController alertControllerWithTitle:localize(@"WARNING_ALERT_TITLE") message:message preferredStyle:UIAlertControllerStyleAlert];
-
+	
 		if ([injectionPlatform isEqualToString:@"Substrate"]) {
 			UIAlertAction *openRepoAction = [UIAlertAction actionWithTitle:localize(@"OPEN_REPO") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
 				[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://opa334.github.io"]];
@@ -262,6 +262,7 @@ void presentNotLoadingFirstWarning(PSListController *plc, BOOL showDontShowAgain
 	[super viewDidLoad];
     CHWLRefreshMatches();
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        [[CHPDaemonList sharedInstance] prepareApplicationExtensionsIfNeeded];
         [[CHPDaemonList sharedInstance] updateDaemonListIfNeeded];
     });
 
@@ -279,12 +280,12 @@ void determineLoadingOrder()
 
 	BOOL isSubstrate = [getInjectionPlatform() isEqualToString:@"Substrate"];
 	if (isSubstrate) {
-
+		 
 		DIR *dir;
 		struct dirent *dp;
 		dir = opendir(injectionLibrariesPath.UTF8String);
-		dp=readdir(dir);
-		dp=readdir(dir);
+		dp=readdir(dir);  
+		dp=readdir(dir);  
 		while ((dp = readdir(dir)) != NULL) {
 			NSString *filename = [NSString stringWithCString:dp->d_name encoding:NSUTF8StringEncoding];
 
@@ -294,7 +295,7 @@ void determineLoadingOrder()
 		}
 	}
 	else {
-
+		 
 		NSMutableArray *contents = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:injectionLibrariesPath error:nil] mutableCopy];
 		NSArray *plists = [contents filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF ENDSWITH %@", @"plist"]];
 		for (NSString *plist in plists) {
@@ -318,7 +319,7 @@ void determineLoadingOrder()
 		if ([[targetLoaderAttributes objectForKey:NSFileType] isEqualToString:NSFileTypeSymbolicLink]) {
 			NSString *destination = [[NSFileManager defaultManager] destinationOfSymbolicLinkAtPath:jbroot(@"/usr/lib/substrate/SubstrateLoader.dylib") error:nil];
 			if ([destination hasPrefix:@"/usr/lib/ChoicyLoader.dylib"]) {
-
+				 
 				dylibsBeforeChoicy = nil;
 			}
 		}

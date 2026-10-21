@@ -37,6 +37,9 @@
 - (NSArray *)tweaksForBundleIdentifier:(NSString *)identifier executableName:(NSString *)name frameworkIdentifiers:(NSSet *)frameworks;
 - (NSArray *)tweakListForExecutableAtPath:(NSString *)executablePath;
 - (NSDictionary *)candidateAnalysisForExecutableAtPath:(NSString *)executablePath;
+- (NSDictionary *)cachedCandidateAnalysisForExecutableAtPath:(NSString *)executablePath;
+- (void)invalidateCandidateAnalysisForExecutableAtPath:(NSString *)executablePath;
+- (void)invalidateAllCandidateAnalyses;
 - (BOOL)oneOrMoreTweaksInjectIntoExecutableAtPath:(NSString *)executablePath;
 - (BOOL)isTweak:(CHPTweakInfo *)tweak hiddenForApplicationWithIdentifier:(NSString *)applicationID;
 - (BOOL)isTweakHiddenForAnyProcess:(CHPTweakInfo *)tweakName;

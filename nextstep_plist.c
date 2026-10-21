@@ -1,3 +1,5 @@
+ 
+
 #include <xpc/xpc.h>
 #include <sys/stat.h>
 #include "nextstep_plist.h"
@@ -140,7 +142,7 @@ static xpc_object_t nxp_parse_dict(nextstep_plist_t *plist) {
 
         char current = current_char(plist);
         xpc_object_t value = NULL;
-
+        
         if (current == ';') {
             value = xpc_string_create(key);
         } else if (current == '=') {
@@ -157,7 +159,7 @@ static xpc_object_t nxp_parse_dict(nextstep_plist_t *plist) {
         xpc_dictionary_set_value(dict, key, value);
         xpc_release(value); value = NULL;
         free(key); key = NULL;
-
+        
         if (find_next_token(plist) != 0) {
             xpc_release(dict);
             return NULL;

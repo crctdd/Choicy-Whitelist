@@ -16,6 +16,7 @@ extern NSString *safe_getExecutablePath(void);
 	return [self.applicationType isEqualToString:@"User"] && ![self atl_isHidden];
 }
 
+ 
 BOOL tagArrayContainsTag(NSArray* tagArr, NSString* tag)
 {
 	if(!tagArr || !tag) return NO;
@@ -39,6 +40,7 @@ BOOL tagArrayContainsTag(NSArray* tagArr, NSString* tag)
 	return found;
 }
 
+ 
 - (BOOL)atl_isHidden
 {
 	NSArray* appTags;
@@ -49,7 +51,7 @@ BOOL tagArrayContainsTag(NSArray* tagArr, NSString* tag)
 
 	if([self respondsToSelector:@selector(correspondingApplicationRecord)])
 	{
-
+		 
 		LSApplicationRecord* record = [self correspondingApplicationRecord];
 		recordAppTags = record.appTags;
 		launchProhibited = record.launchProhibited;
@@ -74,6 +76,10 @@ BOOL tagArrayContainsTag(NSArray* tagArr, NSString* tag)
 	return tagArrayContainsTag(appTags, @"hidden") || tagArrayContainsTag(recordAppTags, @"hidden") || tagArrayContainsTag(sbAppTags, @"hidden") || isWebApplication || launchProhibited;
 }
 
+ 
+
+
+
 - (NSString*)atl_fastDisplayName
 {
 	NSString* cachedDisplayName = [self valueForKey:@"_localizedName"];
@@ -96,7 +102,7 @@ BOOL tagArrayContainsTag(NSArray* tagArr, NSString* tag)
 		localizedName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
 		if(![localizedName isKindOfClass:[NSString class]]) localizedName = nil;
 		if(!localizedName || [localizedName isEqualToString:@""])
-		{
+		{ 
 			localizedName = [bundle objectForInfoDictionaryKey:@"CFBundleName"];
 			if(![localizedName isKindOfClass:[NSString class]]) localizedName = nil;
 			if(!localizedName || [localizedName isEqualToString:@""])
@@ -105,7 +111,7 @@ BOOL tagArrayContainsTag(NSArray* tagArr, NSString* tag)
 				if(![localizedName isKindOfClass:[NSString class]]) localizedName = nil;
 				if(!localizedName || [localizedName isEqualToString:@""])
 				{
-
+					 
 					localizedName = self.localizedName;
 				}
 			}
@@ -133,12 +139,12 @@ BOOL tagArrayContainsTag(NSArray* tagArr, NSString* tag)
 
 -(id)atl_bundleIdentifier
 {
-
+	 
 	if([self respondsToSelector:@selector(bundleIdentifier)])
 	{
 		return [self bundleIdentifier];
 	}
-
+	 
 	else
 	{
 		return [self applicationIdentifier];
@@ -153,6 +159,7 @@ BOOL tagArrayContainsTag(NSArray* tagArr, NSString* tag)
 {
 	NSString *selfExecutable = safe_getExecutablePath();
 	if ([selfExecutable isEqualToString:@"/usr/libexec/lsd"]) {
+		 
 
 		return nil;
 	}

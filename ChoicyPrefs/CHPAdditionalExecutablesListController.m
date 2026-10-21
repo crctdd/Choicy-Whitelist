@@ -29,11 +29,13 @@
 
 @implementation CHPAdditionalExecutablesListController
 
+ 
 - (UIBarButtonItem *)editBarButtonItem
 {
 	return [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(addButtonPressed)];
 }
 
+ 
 - (id)_editButtonBarItem
 {
 	return [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(addButtonPressed)];
@@ -114,6 +116,12 @@
 		return;
 	}
 
+	 
+
+
+
+
+
 	[_additionalExecutables addObject:executablePath];
 	[self saveAdditionalExecutables];
 
@@ -134,6 +142,7 @@
 	[_additionalExecutables removeObject:rootfs(executablePath)];
 	[self saveAdditionalExecutables];
 
+	 
 	NSLog(@"Removing process configuration for additional executable: %@ : %@", executablePath, rootfs(executablePath));
 	void choicy_reloadPreferences();choicy_reloadPreferences();
 	NSMutableDictionary *mutablePrefs = preferencesForWriting();

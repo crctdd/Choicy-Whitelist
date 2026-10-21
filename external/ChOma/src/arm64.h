@@ -4,10 +4,11 @@
 #include "Util.h"
 
 typedef enum {
-
+	 
 	ARM64_REG_TYPE_X,
 	ARM64_REG_TYPE_W,
 
+	 
 	ARM64_REG_TYPE_Q,
 	ARM64_REG_TYPE_D,
 	ARM64_REG_TYPE_S,
@@ -27,7 +28,7 @@ enum {
 };
 
 typedef enum {
-	LDR_STR_TYPE_ANY,
+	LDR_STR_TYPE_ANY,  
 	LDR_STR_TYPE_POST_INDEX,
 	LDR_STR_TYPE_PRE_INDEX,
 	LDR_STR_TYPE_UNSIGNED,

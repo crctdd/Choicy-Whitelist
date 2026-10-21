@@ -1,6 +1,6 @@
 #import "CHWLFrameworkSupport.h"
 
-const NSUInteger CHWLFrameworkCacheEntryVersion = 3;
+const NSUInteger CHWLFrameworkCacheEntryVersion = 4;
 
 NSSet<NSString *> *CHWLDependencyClosure(NSString *root, NSArray<NSString *> *(^dependencies)(NSString *image))
 {
@@ -61,6 +61,7 @@ NSString *CHWLFrameworkBundlePath(NSString *image)
 {
     NSString *path = image.stringByDeletingLastPathComponent;
     while (path.length > 1) {
+        if ([@[@"appex", @"xpc", @"app", @"bundle"] containsObject:path.pathExtension]) return nil;
         if ([path.pathExtension isEqualToString:@"framework"]) return path;
         NSString *parent = path.stringByDeletingLastPathComponent;
         if ([parent isEqual:path]) break;
@@ -72,11 +73,34 @@ NSString *CHWLFrameworkBundlePath(NSString *image)
 NSArray<NSString *> *CHWLValidatedFrameworkEntry(id entry, NSDictionary *signature)
 {
     if (!signature || ![entry isKindOfClass:NSDictionary.class] ||
-        ![entry[@"version"] isEqual:@(CHWLFrameworkCacheEntryVersion)] || ![entry[@"signature"] isEqual:signature]) return nil;
+        ![entry[@"version"] isEqual:@(CHWLFrameworkCacheEntryVersion)] || ![entry[@"signature"] isEqual:signature] ||
+        !CHWLInputSignaturesAreCurrent(entry[@"inputs"])) return nil;
     id values = entry[@"identifiers"];
     if (![values isKindOfClass:NSArray.class] || [values count] > 4096) return nil;
     for (id identifier in values) {
         if (![identifier isKindOfClass:NSString.class] || ![identifier length] || [identifier length] > 1024) return nil;
     }
     return values;
+}
+
+NSDictionary *CHWLInputSignatures(NSArray<NSString *> *paths)
+{
+    NSMutableDictionary *signatures = [NSMutableDictionary new];
+    for (NSString *path in paths) {
+        NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:path error:nil];
+        signatures[path] = attributes ? @[attributes[NSFileSize] ?: @0,
+            attributes[NSFileModificationDate] ?: NSDate.distantPast, attributes[NSFileSystemFileNumber] ?: @0] : @[];
+    }
+    return signatures.copy;
+}
+
+BOOL CHWLInputSignaturesAreCurrent(id signatures)
+{
+    if (![signatures isKindOfClass:NSDictionary.class] || ![signatures count] || [signatures count] > 8192) return NO;
+    for (id path in signatures) {
+        if (![path isKindOfClass:NSString.class] || ![path isAbsolutePath] || [path length] > 4096) return NO;
+        id value = signatures[path];
+        if (![value isKindOfClass:NSArray.class] || ([value count] != 0 && [value count] != 3)) return NO;
+    }
+    return [signatures isEqual:CHWLInputSignatures([signatures allKeys])];
 }

@@ -2,7 +2,8 @@
 
 "APPLICATIONS" = "Εφαρμογές";
 "DAEMONS" = "Υπηρεσία συστήματος";
-
+ 
+ 
 "DISABLE_TWEAK_INJECTION" = "Απενεργοποίηση διακοπής tweak";
 "LAUNCH_WITHOUT_TWEAKS" = "Λειτουργία χωρίς tweaks";
 "LAUNCH_WITH_TWEAKS" = "Λειτουργία με tweaks";
@@ -11,10 +12,13 @@
 "APP_OPTIONS" = "Επιλογές εφαρμογής";
 "APP_OPTIONS_FOOTER" = "Επιλογές εφαρμογής footer";
 "CUSTOM_TWEAK_CONFIGURATION" = "Προσαρμοσμένη διαμόρφωση tweak";
-
+ 
+ 
+ 
+ 
 "TWEAKS_DISABLED" = "Απενεργοποίηση tweaks";
 "CUSTOM" = "Προσαρμοσμένο";
-
+ 
 "SHOW_RECOMMENDED_DAEMONS" = "Προειδοποίηση υπηρεσίας συστήματος";
 "SHOW_ALL_DAEMONS" = "Προβολή όλων των υπηρεσιών συστημάτων";
 "SYSTEM_APPLICATIONS" = "Σύστημα εφαρμογών";
@@ -22,7 +26,17 @@
 "HIDDEN_APPLICATIONS" = "Κρυμμένες εφαρμοφές";
 "GLOBAL_CONFIGURATION" = "Διεθνής διαμόρφωση";
 "GLOBAL_TWEAK_CONFIGURATION" = "Διεθνής διαμόρφωση tweak";
-
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 "CREDITS" = "Πιστώσεις";
 "RESPRING" = "Επανεκκίνηση/Επαναφορά";
 "WARNING_ALERT_TITLE" = "Προειδοποίηση τίτλου";
@@ -33,6 +47,27 @@
 "DONT_SHOW_AGAIN" = "Να μην εμφανιστεί ξανά";
 "CLOSE" = "Κλείστε";
 "DAEMON_LIST_BOTTOM_NOTICE" = "Υπηρεσία συστήματος γνωστοποίησης";
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
 
 "ENABLE_TWEAK_INJECTION" = "Enable Tweak Injection";
 

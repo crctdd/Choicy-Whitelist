@@ -14,6 +14,9 @@
 int macho_read_at_offset(MachO *macho, uint64_t offset, size_t size, void *outBuf)
 {
     if (macho->containingCache) {
+         
+
+
 
         uint64_t vmaddr = 0;
         if (macho_translate_fileoff_to_vmaddr(macho, offset, &vmaddr, NULL) == 0) {
@@ -27,7 +30,7 @@ int macho_read_at_offset(MachO *macho, uint64_t offset, size_t size, void *outBu
 int macho_read_string_at_offset(MachO *macho, uint64_t offset, char **outString)
 {
     if (macho->containingCache) {
-
+         
         uint64_t vmaddr = 0;
         if (macho_translate_fileoff_to_vmaddr(macho, offset, &vmaddr, NULL) == 0) {
             return macho_read_string_at_vmaddr(macho, vmaddr, outString);
@@ -105,7 +108,7 @@ int macho_read_at_vmaddr(MachO *macho, uint64_t vmaddr, size_t size, void *outBu
 
         uint64_t readEnd = vmaddr + size;
         if (readEnd >= (segment->command.vmaddr + segment->command.vmsize)) {
-
+             
             return -1;
         }
 
@@ -125,7 +128,7 @@ int macho_read_string_at_vmaddr(MachO *macho, uint64_t vmaddr, char **outString)
         if (r != 0) return r;
 
         if (vmaddr >= (segment->command.vmaddr + segment->command.vmsize)) {
-
+             
             return -1;
         }
 
@@ -142,7 +145,7 @@ int macho_write_at_vmaddr(MachO *macho, uint64_t vmaddr, size_t size, const void
 
     uint64_t readEnd = vmaddr + size;
     if (readEnd >= (segment->command.vmaddr + segment->command.vmsize)) {
-
+         
         return -1;
     }
 
@@ -156,6 +159,7 @@ int macho_enumerate_load_commands(MachO *macho, void (^enumeratorBlock)(struct l
         return -1;
     }
 
+     
     uint64_t offset = macho_get_mach_header_size(macho);
 
     for (int j = 0; j < macho->machHeader.ncmds; j++) {
@@ -168,7 +172,7 @@ int macho_enumerate_load_commands(MachO *macho, void (^enumeratorBlock)(struct l
             printf("Ignoring unknown command: 0x%x.\n", loadCommand.cmd);
         }
         else {
-
+             
             uint8_t cmd[loadCommand.cmdsize];
             if (macho_read_at_offset(macho, offset, loadCommand.cmdsize, cmd) != 0) continue;
             bool stop = false;
@@ -207,6 +211,7 @@ int macho_enumerate_symbols(MachO *macho, void (^enumeratorBlock)(const char *na
     bool didScanDSC = false;
 
     if (macho->containingCache && macho->cacheImage) {
+         
 
         didScanDSC = (dsc_image_enumerate_symbols(macho->containingCache, macho->cacheImage, enumeratorBlock) == 0);
     }
@@ -244,7 +249,7 @@ int macho_enumerate_symbols(MachO *macho, void (^enumeratorBlock)(const char *na
                 }
 
                 if (r != 0) continue;
-
+    
                 #undef _GENERIC_READ_NLIST
 
                 if (n_strx >= symtabCommand->strsize || n_strx == 0) continue;
@@ -253,7 +258,7 @@ int macho_enumerate_symbols(MachO *macho, void (^enumeratorBlock)(const char *na
                 if (symbolName[0] == 0) continue;
 
                 if (didScanDSC) {
-
+                     
                     if (!strcmp(symbolName, "<redacted>")) continue;
                 }
 
@@ -274,9 +279,9 @@ int macho_enumerate_symbols(MachO *macho, void (^enumeratorBlock)(const char *na
 int macho_enumerate_dependencies(MachO *macho, void (^enumeratorBlock)(const char *dylibPath, uint32_t cmd, struct dylib* dylib, bool *stop))
 {
     macho_enumerate_load_commands(macho, ^(struct load_command loadCommand, uint64_t offset, void *cmd, bool *stop){
-        if (loadCommand.cmd == LC_LOAD_DYLIB ||
-            loadCommand.cmd == LC_LOAD_WEAK_DYLIB ||
-            loadCommand.cmd == LC_REEXPORT_DYLIB ||
+        if (loadCommand.cmd == LC_LOAD_DYLIB || 
+            loadCommand.cmd == LC_LOAD_WEAK_DYLIB || 
+            loadCommand.cmd == LC_REEXPORT_DYLIB || 
             loadCommand.cmd == LC_LAZY_LOAD_DYLIB ||
             loadCommand.cmd == LC_LOAD_UPWARD_DYLIB) {
             struct dylib_command *dylibCommand = (struct dylib_command *)cmd;
@@ -348,9 +353,9 @@ uint64_t macho_get_base_address(MachO *macho)
         if (loadCommand.cmd == LC_SEGMENT_64) {
             struct segment_command_64 *segmentCommand = (struct segment_command_64 *)cmd;
             SEGMENT_COMMAND_64_APPLY_BYTE_ORDER(segmentCommand, LITTLE_TO_HOST_APPLIER);
-            if (strncmp(segmentCommand->segname, "__PRELINK", 9) != 0
+            if (strncmp(segmentCommand->segname, "__PRELINK", 9) != 0 
                 && strncmp(segmentCommand->segname, "__PLK", 5) != 0) {
-
+                 
                 if (segmentCommand->vmaddr < base) {
                     base = segmentCommand->vmaddr;
                 }
@@ -411,13 +416,16 @@ int macho_parse_segments(MachO *macho)
             macho->segmentCount++;
             if (macho->segments == NULL) { macho->segments = malloc(macho->segmentCount * sizeof(MachOSegment*)); }
             else { macho->segments = realloc(macho->segments, macho->segmentCount * sizeof(MachOSegment*)); }
+            
+             
+
 
             struct segment_command segmentCommand;
             memcpy(&segmentCommand, cmd, sizeof(segmentCommand));
             SEGMENT_COMMAND_APPLY_BYTE_ORDER(&segmentCommand, LITTLE_TO_HOST_APPLIER);
-
+            
             MachOSegment **segment = &macho->segments[macho->segmentCount-1];
-
+            
             *segment = malloc(sizeof(MachOSegment) + segmentCommand.nsects * sizeof(struct section_64));
             (*segment)->command = (struct segment_command_64) {
                 .cmd = segmentCommand.cmd,
@@ -432,12 +440,12 @@ int macho_parse_segments(MachO *macho)
                 .nsects = segmentCommand.nsects,
             };
             memcpy((*segment)->command.segname, segmentCommand.segname, sizeof(segmentCommand.segname));
-
+            
             for (uint32_t i = 0; i < macho->segments[macho->segmentCount-1]->command.nsects; i++) {
                 struct section section;
                 memcpy(&section, cmd + sizeof(struct segment_command) + (i * sizeof(struct section)), sizeof(section));
                 SECTION_APPLY_BYTE_ORDER(&section, LITTLE_TO_HOST_APPLIER);
-
+                
                 (*segment)->sections[i] = (struct section_64) {
                     .addr = section.addr,
                     .align = section.align,
@@ -449,7 +457,7 @@ int macho_parse_segments(MachO *macho)
                     .reserved3 = 0,
                     .size = section.size,
                 };
-
+                
                 memcpy((*segment)->sections[i].sectname, section.sectname, sizeof(section.sectname));
                 memcpy((*segment)->sections[i].segname, section.segname, sizeof(section.segname));
             }
@@ -486,9 +494,10 @@ int macho_parse_fileset_machos(MachO *macho)
             filesetMacho->entry_id = strdup((char *)cmd + filesetCommand->entry_id.offset);
             filesetMacho->vmaddr = filesetCommand->vmaddr;
             filesetMacho->fileoff = filesetCommand->fileoff;
-
+            
             MemoryStream *subStream = memory_stream_softclone(macho->stream);
-
+            
+             
             memory_stream_trim(subStream, filesetCommand->fileoff, 0);
             filesetMacho->underlyingMachO = fat_init_from_memory_stream(subStream);
         }
@@ -518,6 +527,7 @@ MachO *macho_init(MemoryStream *stream, struct fat_arch_64 archDescriptor)
     if (macho_read_at_offset(macho, 0, sizeof(macho->machHeader), &macho->machHeader) != 0) goto fail;
     MACH_HEADER_APPLY_BYTE_ORDER(&macho->machHeader, LITTLE_TO_HOST_APPLIER);
 
+     
     if (macho->machHeader.magic != MH_MAGIC_64 && macho->machHeader.magic != MH_MAGIC) {
         goto fail;
     }

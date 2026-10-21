@@ -81,7 +81,7 @@
 - (void)setPrivilegedValue:(id)value specifier:(PSSpecifier *)specifier
 {
     NSString *name = [specifier propertyForKey:@"key"];
-
+     
     BOOL eligible = NO;
     for (CHPTweakInfo *tweak in [CHPTweakList sharedInstance].tweakList) {
         if ([tweak.dylibName isEqualToString:name]) { eligible = tweak.isUIKitTweak; break; }

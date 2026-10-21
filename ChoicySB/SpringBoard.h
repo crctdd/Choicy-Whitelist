@@ -57,7 +57,7 @@
 @property (nonatomic,copy) NSString *localizedTitle;
 @property (nonatomic,copy) NSString *localizedSubtitle;
 @property (nonatomic,copy) SBSApplicationShortcutIcon *icon;
-@property (nonatomic,copy) NSDictionary *userInfo;
+@property (nonatomic,copy) NSDictionary *userInfo; 
 @property (assign,nonatomic) NSUInteger activationMode;
 @property (nonatomic,copy) NSString *bundleIdentifierToLaunch;
 @end

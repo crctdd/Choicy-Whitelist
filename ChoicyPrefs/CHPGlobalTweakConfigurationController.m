@@ -83,7 +83,7 @@
 			if (!enabled) {
 				atLeastOneTweakDisabled = YES;
 			}
-
+			
 			[tweakSpecifier setProperty:NSClassFromString(@"CHPSubtitleSwitch") forKey:@"cellClass"];
 			[tweakSpecifier setProperty:@(enabled) forKey:@"enabled"];
 			[tweakSpecifier setProperty:tweakInfo.dylibName forKey:@"key"];
@@ -105,7 +105,7 @@
 						  detail:nil
 						  cell:PSButtonCell
 						  edit:nil];
-
+			
 			[greyedOutInfoSpecifier setProperty:@YES forKey:@"enabled"];
 			greyedOutInfoSpecifier.buttonAction = @selector(presentNotLoadingFirstWarning);
 			[_specifiers addObject:greyedOutInfoSpecifier];

@@ -16,4 +16,4 @@ typedef struct BufferedStreamContext {
 MemoryStream *buffered_stream_init_from_buffer_nocopy(void *buffer, size_t bufferSize, uint32_t flags);
 MemoryStream *buffered_stream_init_from_buffer(void *buffer, size_t bufferSize, uint32_t flags);
 
-#endif
+#endif  

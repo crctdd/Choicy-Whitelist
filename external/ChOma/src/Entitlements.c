@@ -14,7 +14,7 @@
 CFDataRef get_property_list_data(CFPropertyListRef plist) {
     CFDataRef data = NULL;
     CFErrorRef error = NULL;
-
+    
     data = CFPropertyListCreateData(
         kCFAllocatorDefault,
         plist,
@@ -22,14 +22,14 @@ CFDataRef get_property_list_data(CFPropertyListRef plist) {
         0,
         &error
     );
-
+    
     if (data == NULL) {
         if (error != NULL) {
             CFShow(error);
             CFRelease(error);
         }
     }
-
+    
     return data;
 }
 
@@ -106,6 +106,7 @@ CS_DecodedBlob *create_xml_entitlements_blob(const char *entitlementsFile) {
         return NULL;
     }
 
+     
     *genericBlob = HOST_TO_BIG(CSMAGIC_EMBEDDED_ENTITLEMENTS);
     uint32_t totalSize = sizeof(CSMAGIC_EMBEDDED_DER_ENTITLEMENTS) + sizeof(uint32_t) + CFDataGetLength(entitlementsPlistData);
     *(genericBlob + 1) = HOST_TO_BIG(totalSize);
@@ -183,10 +184,10 @@ void print_entitlement_information(Entitlement *entitlement) {
 }
 
 DEREncodedItem *der_encode_array(EntitlementArray array) {
-
+     
     DEREncodedItem **items = malloc(sizeof(DEREncodedItem *) * array.nItems);
     for (int i = 0; i < array.nItems; i++) {
-
+         
         if (array.type == ARRAY_TYPE_STRING) {
             items[i] = der_encode_utf8_string(((char **)array.items)[i]);
         } else {
@@ -194,12 +195,14 @@ DEREncodedItem *der_encode_array(EntitlementArray array) {
         }
     }
 
+     
     DEREncodedItem *sequence = der_encode_sequence(items, array.nItems);
     if (sequence == NULL) {
         fprintf(stderr, "Error: failed to encode sequence\n");
         return NULL;
     }
 
+     
     for (int i = 0; i < array.nItems; i++) {
         der_free_encoded_item(items[i]);
     }
@@ -342,7 +345,7 @@ static void append_to_entitlements(const void* key, const void* value, void* con
                 free(keyCString);
                 return;
             }
-
+            
             if (!CFStringGetCString(item, itemCString, maxSize, kCFStringEncodingUTF8)) {
                 fprintf(stderr, "Error: failed to convert entitlement to C string\n");
                 for (int j = 0; j < i; j++) {
@@ -375,6 +378,8 @@ static void append_to_entitlements(const void* key, const void* value, void* con
         .key = keyCString,
         .value = entitlementValue,
     };
+
+     
 
     entitlements->entitlements[entitlements->nEntitlements] = newEntitlement;
     entitlements->nEntitlements++;
@@ -416,7 +421,7 @@ Entitlements *parse_entitlements_from_property_list(const char *entitlementsFile
     }
 
     CFDictionaryApplyFunction(entitlementsDict, append_to_entitlements, entitlements);
-
+    
     CFRelease(entitlementsPlist);
 
     return entitlements;

@@ -22,7 +22,7 @@ int memcmp_masked(const void *str1, const void *str2, unsigned char* mask, size_
             cMask = mask[i];
         }
         if((p[i] & cMask) != (q[i] & cMask)) {
-
+             
             return -1;
         }
     }
@@ -64,6 +64,7 @@ void enumerate_range(uint64_t start, uint64_t end, uint16_t alignment, size_t nb
     for (uint64_t cur = start; dir == 1 ? (cur + (alignment * dir)) <= end : (cur + (alignment * dir)) >= end; cur += (dir * alignment)) {
         if (!enumerator(cur)) break;
 
+         
         if (dir == -1 && cur == 0) break;
     }
 }
@@ -77,7 +78,7 @@ int read_string(int fd, char **strOut)
         if (read(fd, &c, sizeof(c)) != sizeof(c)) return -1;
         sz++;
     } while(c != 0);
-
+    
     lseek(fd, pos, SEEK_SET);
     *strOut = malloc(sz);
     read(fd, *strOut, sz);

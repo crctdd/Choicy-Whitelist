@@ -30,10 +30,13 @@
 
 #import <MobileCoreServices/LSApplicationWorkspace.h>
 #import "CHWLListSupport.h"
+#import "CHWLComponentSupport.h"
+#import "CHPDaemonList.h"
+#import "CHWLExtensionRegistry.h"
 
-@interface LSApplicationWorkspace (CHWLApplicationChanges)
-- (void)addObserver:(id)observer;
-- (void)removeObserver:(id)observer;
+@interface CHPApplicationPlugInsListController ()
+@property (nonatomic) BOOL loadingComponents;
+@property (nonatomic) NSUInteger componentRequest;
 @end
 
 @implementation CHPApplicationPlugInsListController
@@ -42,23 +45,14 @@
 {
     [self applySearchControllerHideWhileScrolling:NO];
     [super viewDidLoad];
+    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(applicationExtensionsChanged:)
+        name:CHWLApplicationExtensionsChanged object:nil];
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(chwlMatchesChanged:) name:CHWLMatchesChanged object:nil];
-    [[LSApplicationWorkspace defaultWorkspace] addObserver:self];
 }
 - (void)dealloc
 {
     [NSNotificationCenter.defaultCenter removeObserver:self];
-    [[LSApplicationWorkspace defaultWorkspace] removeObserver:self];
 }
-- (void)applicationsDidInstall:(id)info
-{
-    dispatch_async(dispatch_get_main_queue(), ^{
-        self->_appPlugIns = nil;
-        self->_specifiers = nil;
-        if (self.isViewLoaded && self.view.window && self.navigationController.topViewController == self) [self reloadSpecifiers];
-    });
-}
-- (void)applicationsDidUninstall:(id)info { [self applicationsDidInstall:info]; }
 - (void)chwlMatchesChanged:(NSNotification *)note
 {
     if (self.isViewLoaded && self.view.window && self.navigationController.topViewController == self && CHWLListStateChanged(self)) [self reloadSpecifiers];
@@ -69,41 +63,71 @@
     extern void choicy_reloadPreferences(void);
     choicy_reloadPreferences();
     CHWLRefreshMatches();
+    if (![self.specifier propertyForKey:@"applicationIdentifier"]) dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        [CHPDaemonList.sharedInstance prepareApplicationExtensionsIfNeeded];
+    });
     if (CHWLListStateChanged(self)) [self reloadSpecifiers];
+}
+- (void)applicationExtensionsChanged:(NSNotification *)note
+{
+    (void)note;
+    if ([self.specifier propertyForKey:@"applicationIdentifier"]) return;
+    NSArray *snapshot = CHPDaemonList.sharedInstance.applicationExtensions;
+    if (!snapshot || [_appPlugIns isEqual:snapshot]) return;
+    self.componentRequest++;
+    self.loadingComponents = NO;
+    _appPlugIns = snapshot;
+    _specifiers = nil;
+    if (self.isViewLoaded && self.view.window && self.navigationController.topViewController == self) [self reloadSpecifiers];
 }
 - (void)loadPlugIns
 {
-    NSMutableDictionary *plugins = [NSMutableDictionary new];
-    LSApplicationWorkspace *workspace = [LSApplicationWorkspace defaultWorkspace];
+    if (self.loadingComponents || _appPlugIns) return;
     NSString *appID = [self.specifier propertyForKey:@"applicationIdentifier"];
-    NSArray *apps = appID ? @[[LSApplicationProxy applicationProxyForIdentifier:appID]] : [workspace allInstalledApplications];
-    for (LSApplicationProxy *app in apps) {
-        for (LSPlugInKitProxy *plugin in [(app.plugInKitPlugins ?: @[]) arrayByAddingObjectsFromArray:app.VPNPlugins ?: @[]]) {
-            if (plugin.bundleIdentifier.length) plugins[plugin.bundleIdentifier] = plugin;
+    NSArray *cached = appID ? nil : CHPDaemonList.sharedInstance.applicationExtensions;
+    if (cached) { _appPlugIns = cached; return; }
+    self.loadingComponents = YES;
+    NSUInteger request = ++self.componentRequest;
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        NSArray *snapshot;
+        if (appID) snapshot = CHWLRegisteredExtensionRecords(appID);
+        else {
+            [CHPDaemonList.sharedInstance prepareApplicationExtensionsIfNeeded];
+            snapshot = CHPDaemonList.sharedInstance.applicationExtensions;
         }
-    }
-    if (!appID && [workspace respondsToSelector:@selector(pluginsWithIdentifiers:protocols:version:)]) {
-        for (LSPlugInKitProxy *plugin in [workspace pluginsWithIdentifiers:@[] protocols:@[] version:nil]) {
-            if (plugin.bundleIdentifier.length) plugins[plugin.bundleIdentifier] = plugin;
-        }
-    }
-    _appPlugIns = plugins.allValues;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            typeof(self) controller = weakSelf;
+            if (!controller || controller.componentRequest != request) return;
+            controller->_appPlugIns = snapshot ?: @[];
+            controller.loadingComponents = NO;
+            controller->_specifiers = nil;
+            if (controller.isViewLoaded && controller.view.window && controller.navigationController.topViewController == controller) [controller reloadSpecifiers];
+        });
+    });
 }
 - (NSMutableArray *)specifiers
 {
     if (!_specifiers) {
         if (!_appPlugIns) [self loadPlugIns];
+        if (!_appPlugIns) {
+            _specifiers = [NSMutableArray arrayWithObject:[PSSpecifier preferenceSpecifierNamed:@"正在读取应用拓展…"
+                target:self set:nil get:nil detail:nil cell:PSStaticTextCell edit:nil]];
+            return _specifiers;
+        }
         NSMutableArray *rows = [NSMutableArray new];
-        for (LSPlugInKitProxy *plugin in _appPlugIns) {
-            NSString *path = [CHPProcessConfigurationListController executablePathForBundleProxy:plugin];
-            NSString *name = plugin.localizedName ?: path.lastPathComponent ?: plugin.bundleIdentifier;
+        for (NSDictionary *plugin in _appPlugIns) {
+            NSString *path = plugin[@"executablePath"];
+            NSString *identifier = plugin[@"bundleIdentifier"];
+            NSString *name = plugin[@"name"];
             if (_searchKey.length && ![name localizedStandardContainsString:_searchKey] &&
-                ![plugin.bundleIdentifier localizedStandardContainsString:_searchKey]) continue;
+                ![identifier localizedStandardContainsString:_searchKey]) continue;
             PSSpecifier *row = [PSSpecifier preferenceSpecifierNamed:name target:self set:nil get:nil
                 detail:CHPProcessConfigurationListController.class cell:PSLinkCell edit:nil];
-            [row setProperty:plugin.bundleIdentifier forKey:@"pluginIdentifier"];
+            [row setProperty:identifier forKey:@"pluginIdentifier"];
             [row setProperty:@NO forKey:@"chwlPrivilegeEligible"];
             if (path) [row setProperty:path forKey:@"executablePath"];
+            [row setProperty:@YES forKey:@"chwlFrameworkMatching"];
             [rows addObject:row];
         }
         _specifiers = CHWLGroupRows(rows, @"应用拓展");

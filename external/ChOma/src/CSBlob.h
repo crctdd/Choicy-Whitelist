@@ -10,11 +10,13 @@
 #include "MachO.h"
 #include "MemoryStream.h"
 
+ 
 typedef struct __BlobIndex {
     uint32_t type;
     uint32_t offset;
 } CS_BlobIndex;
 
+ 
 typedef struct __SuperBlob {
     uint32_t magic;
     uint32_t length;
@@ -23,11 +25,12 @@ typedef struct __SuperBlob {
 } CS_SuperBlob;
 
 typedef struct __GenericBlob {
-    uint32_t magic;
-    uint32_t length;
+    uint32_t magic;					 
+    uint32_t length;				 
     char data[];
 } CS_GenericBlob;
 
+ 
 typedef enum {
     CSMAGIC_REQUIREMENT = 0xfade0c00,
     CSMAGIC_REQUIREMENTS = 0xfade0c01,
@@ -54,9 +57,9 @@ typedef enum {
     CSSLOT_LAUNCH_CONSTRAINT_RESPONSIBLE = 10,
     CSSLOT_LIBRARY_CONSTRAINT = 11,
 
-    CSSLOT_ALTERNATE_CODEDIRECTORIES = 0x1000,
-    CSSLOT_ALTERNATE_CODEDIRECTORY_MAX = 5,
-    CSSLOT_ALTERNATE_CODEDIRECTORY_LIMIT = CSSLOT_ALTERNATE_CODEDIRECTORIES + CSSLOT_ALTERNATE_CODEDIRECTORY_MAX,
+    CSSLOT_ALTERNATE_CODEDIRECTORIES = 0x1000,  
+    CSSLOT_ALTERNATE_CODEDIRECTORY_MAX = 5,          
+    CSSLOT_ALTERNATE_CODEDIRECTORY_LIMIT = CSSLOT_ALTERNATE_CODEDIRECTORIES + CSSLOT_ALTERNATE_CODEDIRECTORY_MAX,  
 
     CSSLOT_SIGNATURESLOT = 0x10000,
     CSSLOT_IDENTIFICATIONSLOT = 0x10001,
@@ -74,9 +77,11 @@ typedef struct s_CS_DecodedSuperBlob {
     struct s_CS_DecodedBlob *firstBlob;
 } CS_DecodedSuperBlob;
 
+ 
 const char *cs_blob_magic_to_string(uint32_t magic);
 const char *cs_slot_type_to_string(uint32_t slotType);
 
+ 
 int macho_extract_cs_to_file(MachO *macho, CS_SuperBlob *superblob);
 
 int macho_find_code_signature_bounds(MachO *macho, uint32_t *offsetOut, uint32_t *sizeOut);
@@ -106,10 +111,10 @@ int csd_superblob_insert_blob_after_blob(CS_DecodedSuperBlob *superblob, CS_Deco
 int csd_superblob_insert_blob_at_index(CS_DecodedSuperBlob *superblob, CS_DecodedBlob *blobToInsert, uint32_t atIndex);
 int csd_superblob_append_blob(CS_DecodedSuperBlob *superblob, CS_DecodedBlob *blobToAppend);
 int csd_superblob_replace_blob(CS_DecodedSuperBlob *superblob, CS_DecodedBlob *newBlob);
-int csd_superblob_remove_blob(CS_DecodedSuperBlob *superblob, CS_DecodedBlob *blobToRemove);
+int csd_superblob_remove_blob(CS_DecodedSuperBlob *superblob, CS_DecodedBlob *blobToRemove);  
 int csd_superblob_remove_blob_at_index(CS_DecodedSuperBlob *superblob, uint32_t atIndex);
 int csd_superblob_calculate_best_cdhash(CS_DecodedSuperBlob *decodedSuperblob, void *cdhashOut, int *cdhashType);
 int csd_superblob_print_content(CS_DecodedSuperBlob *decodedSuperblob, MachO *macho, bool printAllSlots, bool verifySlots);
 void csd_superblob_free(CS_DecodedSuperBlob *decodedSuperblob);
 
-#endif
+#endif  

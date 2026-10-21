@@ -20,21 +20,24 @@ MemoryStream *fat_get_stream(Fat *fat)
 
 int fat_parse_slices(Fat *fat)
 {
-
+     
     size_t fileSize = memory_stream_get_size(fat->stream);
     if (fileSize == MEMORY_STREAM_SIZE_INVALID) {
         printf("Error: Failed to parse fat slices, memory_stream_get_size returned MEMORY_STREAM_SIZE_INVALID\n");
         return -1;
     }
 
+     
     struct fat_header fatHeader;
     fat_read_at_offset(fat, 0, sizeof(fatHeader), &fatHeader);
     FAT_HEADER_APPLY_BYTE_ORDER(&fatHeader, BIG_TO_HOST_APPLIER);
 
+     
     if (fatHeader.magic == FAT_MAGIC || fatHeader.magic == FAT_MAGIC_64) {
-
+         
         bool is64 = fatHeader.magic == FAT_MAGIC_64;
 
+         
         if (fatHeader.nfat_arch > 5 || fatHeader.nfat_arch < 1) {
             printf("Error: invalid number of MachO slices (%d), this likely means you are not using an iOS MachO.\n", fatHeader.nfat_arch);
             return -1;
@@ -44,19 +47,21 @@ int fat_parse_slices(Fat *fat)
         fat->slices = malloc(sizeof(MachO*) * fat->slicesCount);
         memset(fat->slices, 0, sizeof(MachO*) * fat->slicesCount);
 
+         
         for (uint32_t i = 0; i < fatHeader.nfat_arch; i++)  {
             struct fat_arch_64 arch64 = {0};
             if (is64) {
-
+                 
                 fat_read_at_offset(fat, sizeof(struct fat_header) + i * sizeof(arch64), sizeof(arch64), &arch64);
                 FAT_ARCH_64_APPLY_BYTE_ORDER(&arch64, BIG_TO_HOST_APPLIER);
             }
             else {
-
+                 
                 struct fat_arch arch = {0};
                 fat_read_at_offset(fat, sizeof(struct fat_header) + i * sizeof(arch), sizeof(arch), &arch);
                 FAT_ARCH_APPLY_BYTE_ORDER(&arch, BIG_TO_HOST_APPLIER);
 
+                 
                 arch64 = (struct fat_arch_64){
                     .cputype = arch.cputype,
                     .cpusubtype = arch.cpusubtype,
@@ -75,6 +80,7 @@ int fat_parse_slices(Fat *fat)
             }
         }
     } else {
+         
 
         fat->slicesCount = 1;
         fat->slices = malloc(sizeof(MachO) * fat->slicesCount);
@@ -97,7 +103,7 @@ int fat_parse_slices(Fat *fat)
         if (!singleSlice) return -1;
         fat->slices[0] = singleSlice;
     }
-
+     
     return 0;
 }
 
@@ -145,6 +151,8 @@ Fat *fat_init_from_memory_stream(MemoryStream *stream)
     fat->stream = stream;
 
     if (fat_parse_slices(fat) != 0) goto fail;
+
+     
 
     return fat;
 

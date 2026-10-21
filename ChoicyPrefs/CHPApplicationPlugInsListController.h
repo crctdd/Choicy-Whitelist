@@ -22,7 +22,7 @@
 @class PSSpecifier, LSPlugInKitProxy;
 
 @interface CHPApplicationPlugInsListController : CHPListController {
-	NSArray<LSPlugInKitProxy*> *_appPlugIns;
+	NSArray<NSDictionary *> *_appPlugIns;
 }
 
 @end

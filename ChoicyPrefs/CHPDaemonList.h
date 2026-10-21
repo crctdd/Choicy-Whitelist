@@ -20,6 +20,7 @@
 
 #import "CHPDaemonListObserver.h"
 #import <Foundation/Foundation.h>
+extern NSString *const CHWLApplicationExtensionsChanged;
 
 @interface CHPDaemonList : NSObject {
 	NSHashTable *_observers;
@@ -27,12 +28,16 @@
 @property(atomic,readonly) BOOL loaded;
 @property(atomic,readonly) BOOL loading;
 @property(atomic,readonly) NSArray *daemonList;
+@property(atomic,readonly) NSArray<NSDictionary *> *extensionList;
+@property(atomic,readonly) NSArray<NSDictionary *> *applicationExtensions;
 + (instancetype)sharedInstance;
 - (BOOL)daemonList:(NSArray *)daemonList containsExecutableName:(NSString *)executableName;
 - (void)updateDaemonListIfNeeded;
+- (void)prepareApplicationExtensionsIfNeeded;
 - (BOOL)loadCachedDaemonListIfNeeded;
 - (NSSet *)cachedFrameworkIdentifiersForPath:(NSString *)path signature:(NSDictionary *)signature;
-- (void)cacheFrameworkIdentifiers:(NSSet *)identifiers forPath:(NSString *)path signature:(NSDictionary *)signature;
+- (void)cacheFrameworkAnalysis:(NSDictionary *)analysis forPath:(NSString *)path signature:(NSDictionary *)signature;
+- (void)invalidateFrameworkIdentifiersForPath:(NSString *)path;
 - (void)addObserver:(id<CHPDaemonListObserver>)observer;
 - (void)removeObserver:(id<CHPDaemonListObserver>)observer;
 - (void)sendReloadToObservers;

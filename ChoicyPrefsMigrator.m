@@ -60,6 +60,7 @@ void removeKeys(NSMutableDictionary *dict, NSArray *keys)
 {
 	NSInteger preferenceVersion = parseNumberInteger(prefs[kChoicyPrefsVersionKey], 0);
 
+	 
 	if (preferenceVersion == 0) {
 		BOOL prev_allowBlacklistOverwrites = parseNumberBool(prefs[@"allowBlacklistOverwrites"], NO);
 		BOOL prev_allowWhitelistOverwrites = parseNumberBool(prefs[@"allowWhitelistOverwrites"], NO);
@@ -74,7 +75,7 @@ void removeKeys(NSMutableDictionary *dict, NSArray *keys)
 			BOOL customTweakConfigurationEnabled = parseNumberBool(processPrefsM[kChoicyProcessPrefsKeyCustomTweakConfigurationEnabled], NO);
 			if (customTweakConfigurationEnabled) {
 				NSInteger allowDenyMode = parseNumberInteger(processPrefsM[kChoicyProcessPrefsKeyAllowDenyMode], 1);
-				if ((allowDenyMode == 1 && prev_allowWhitelistOverwrites) || (allowDenyMode == 2 && prev_allowBlacklistOverwrites)) {
+				if ((allowDenyMode == 1 && prev_allowWhitelistOverwrites) || (allowDenyMode == 2 && prev_allowBlacklistOverwrites)) {  
 					processPrefsM[kChoicyProcessPrefsKeyOverwriteGlobalTweakConfiguration] = @YES;
 				}
 			}

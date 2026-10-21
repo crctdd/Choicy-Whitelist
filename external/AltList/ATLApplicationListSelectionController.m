@@ -50,7 +50,7 @@
 {
 	if(_selectedApplicationID)
 	{
-
+		 
 		NSIndexPath* previousIndexPath = [self indexPathForApplicationWithIdentifier:_selectedApplicationID];
 		if([[tableView indexPathsForVisibleRows] containsObject:previousIndexPath])
 		{

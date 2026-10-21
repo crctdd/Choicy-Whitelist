@@ -38,6 +38,7 @@
 		self.explicitFilterBundles = [self.filterBundles copy];
 		self.filterExecutables = [filter objectForKey:@"Executables"];
 
+		 
 		NSArray *classes = [filter objectForKey:@"Classes"];
 		if (classes && classes.count > 0 && ![self.filterBundles containsObject:@"com.apple.Security"]) {
 			if (!self.filterBundles) {

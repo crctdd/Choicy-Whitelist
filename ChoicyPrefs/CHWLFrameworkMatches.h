@@ -6,3 +6,5 @@ NSSet *CHWLCachedFrameworkIdentifiers(NSString *path);
 BOOL CHWLFrameworkAnalysisFinished(NSString *path);
 BOOL CHWLFrameworkAnalysisFailed(NSString *path);
 void CHWLRequestFrameworkIdentifiers(NSString *path);
+void CHWLInvalidateFrameworkAnalysis(NSString *path);
+void CHWLPublishFrameworkAnalysis(NSString *path, NSDictionary *analysis);

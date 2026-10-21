@@ -38,8 +38,10 @@ typedef struct MachO {
     DyldSharedCacheImage *cacheImage;
 } MachO;
 
+ 
 int macho_read_at_offset(MachO *macho, uint64_t offset, size_t size, void *outBuf);
 
+ 
 int macho_write_at_offset(MachO *macho, uint64_t offset, size_t size, const void *inBuf);
 
 int macho_read_string_at_offset(MachO *macho, uint64_t offset, char **string);
@@ -49,9 +51,11 @@ uint32_t macho_get_filetype(MachO *macho);
 size_t macho_get_mach_header_size(MachO *macho);
 DyldSharedCache *macho_get_containing_cache(MachO *macho);
 
+ 
 int macho_translate_fileoff_to_vmaddr(MachO *macho, uint64_t fileoff, uint64_t *vmaddrOut, MachOSegment **segmentOut);
 int macho_translate_vmaddr_to_fileoff(MachO *macho, uint64_t vmaddr, uint64_t *fileoffOut, MachOSegment **segmentOut);
 
+ 
 int macho_read_at_vmaddr(MachO *macho, uint64_t vmaddr, size_t size, void *outBuf);
 int macho_write_at_vmaddr(MachO *macho, uint64_t vmaddr, size_t size, const void *inBuf);
 int macho_read_string_at_vmaddr(MachO *macho, uint64_t vmaddr, char **outString);
@@ -65,14 +69,18 @@ int macho_enumerate_dependencies(MachO *macho, void (^enumeratorBlock)(const cha
 int macho_enumerate_rpaths(MachO *macho, void (^enumeratorBlock)(const char *rpath, bool *stop));
 int macho_enumerate_function_starts(MachO *macho, void (^enumeratorBlock)(uint64_t funcAddr, bool *stop));
 
+ 
 MachO *macho_init(MemoryStream *stream, struct fat_arch_64 archDescriptor);
 
+ 
 MachO *macho_init_for_writing(const char *filePath);
 
+ 
 MachO **macho_array_create_for_paths(char **inputPaths, int inputPathsCount);
 
+ 
 bool macho_is_encrypted(MachO *macho);
 
 void macho_free(MachO *macho);
 
-#endif
+#endif  

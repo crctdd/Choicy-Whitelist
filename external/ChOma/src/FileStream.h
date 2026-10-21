@@ -18,4 +18,4 @@ MemoryStream *file_stream_init_from_file_descriptor_nodup(int fd, uint32_t buffe
 MemoryStream *file_stream_init_from_file_descriptor(int fd, uint32_t bufferStart, size_t bufferSize, uint32_t flags);
 MemoryStream *file_stream_init_from_path(const char *path, uint32_t bufferStart, size_t bufferSize, uint32_t flags);
 
-#endif
+#endif  

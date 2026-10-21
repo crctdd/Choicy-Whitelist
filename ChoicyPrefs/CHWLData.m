@@ -51,19 +51,27 @@ NSArray *CHWLConfigurationCandidates(NSArray *tweaks, NSDictionary *preferences,
     }];
 }
 
+NSArray<NSString *> *CHWLMatchReasons(CHPTweakInfo *tweak, NSString *identifier,
+    NSString *executableName, NSSet *frameworks)
+{
+    NSMutableArray *reasons = [NSMutableArray new];
+    if (identifier.length && [tweak.explicitFilterBundles containsObject:identifier])
+        [reasons addObject:[@"指定 Bundle ID：" stringByAppendingString:identifier]];
+    if (executableName.length && [tweak.filterExecutables containsObject:executableName])
+        [reasons addObject:[@"指定可执行文件：" stringByAppendingString:executableName]];
+    for (NSString *bundle in [frameworks.allObjects sortedArrayUsingSelector:@selector(compare:)]) {
+        if ([tweak.explicitFilterBundles containsObject:bundle] && ![bundle isEqual:identifier])
+            [reasons addObject:[@"框架依赖：" stringByAppendingString:bundle]];
+    }
+    return reasons.copy;
+}
+
 NSArray *CHWLMatchingConfigurationTweaks(NSArray *tweaks, NSString *identifier,
     NSString *executableName, NSSet *frameworks)
 {
     NSMutableArray *result = [NSMutableArray new];
     for (CHPTweakInfo *tweak in tweaks) {
-        if ((identifier.length && [tweak.explicitFilterBundles containsObject:identifier]) ||
-            (executableName.length && [tweak.filterExecutables containsObject:executableName])) {
-            [result addObject:tweak];
-            continue;
-        }
-        for (NSString *bundle in tweak.explicitFilterBundles) {
-            if ([frameworks containsObject:bundle]) { [result addObject:tweak]; break; }
-        }
+        if (CHWLMatchReasons(tweak, identifier, executableName, frameworks).count) [result addObject:tweak];
     }
     return result.copy;
 }

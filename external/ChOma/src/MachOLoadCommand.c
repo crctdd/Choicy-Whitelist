@@ -152,6 +152,7 @@ int update_load_commands_for_coretrust_bypass(MachO *macho, CS_SuperBlob *superb
 
     uint64_t sizeOfCodeSignature = BIG_TO_HOST(superblob->length);
 
+     
     __block uint64_t blockPaddingSize = 0;
     __block uint64_t vmAddress = 0;
     __block uint64_t fileOffset = 0;
@@ -176,9 +177,11 @@ int update_load_commands_for_coretrust_bypass(MachO *macho, CS_SuperBlob *superb
     uint64_t newSegmentSize = sizeOfCodeSignature + blockPaddingSize;
     uint64_t newVMSize = align_to_size(newSegmentSize, 0x4000);
 
+     
     printf("Updating __LINKEDIT segment...\n");
     update_segment_command_64(macho, "__LINKEDIT", vmAddress, newVMSize, fileOffset, newSegmentSize);
 
+     
     printf("Updating LC_CODE_SIGNATURE load command...\n");
     update_lc_code_signature(macho, sizeOfCodeSignature);
 

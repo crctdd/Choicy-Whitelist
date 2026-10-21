@@ -34,6 +34,7 @@ static inline CHLaunchMode CHLaunchModeForProcess(const char *mode, const char *
     return CHLaunchNormal;
 }
 
+ 
 static inline bool CHForcedInjection(const char *bundle, const char *executable)
 {
     if (bundle && *bundle) {
@@ -68,7 +69,7 @@ static inline bool CHPrivilegeApplies(bool isUIKit, bool listed)
 
 static inline bool CHPrivilegeScopeAllows(bool isApplication, const char *bundle, const char *visibleApplication)
 {
-
+     
     return isApplication && bundle && *bundle && visibleApplication && !strcmp(bundle, visibleApplication);
 }
 
@@ -95,6 +96,8 @@ static inline bool CHShouldLoadManagedTweakForLaunch(CHLaunchMode mode, bool inj
     if (mode == CHLaunchWithAllTweaks) return true;
     return CHShouldLoadManagedTweak(injectionEnabled, privileged, globallyDenied, hasAllowList, allowed, denied);
 }
+
+ 
 
 static inline bool CHShouldLoadConfiguredTweak(CHLaunchMode mode, bool injectionEnabled,
     bool privilegedDomain, bool privilegesDisabled, bool customPrivilegeEnabled,

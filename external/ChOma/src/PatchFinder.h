@@ -40,6 +40,7 @@ uint64_t pfsec_find_function_start(PFSection *section, uint64_t midAddr);
 bool pfsec_contains_vmaddr(PFSection *section, uint64_t addr);
 void pfsec_free(PFSection *section);
 
+
 typedef struct s_MetricShared {
 	uint32_t type;
 } MetricShared;

@@ -70,7 +70,7 @@ BOOL CHApplicationSupportsPrivilege(NSString *identifier)
     if (!identifier.length) return NO;
     LSApplicationProxy *proxy = [LSApplicationProxy applicationProxyForIdentifier:identifier];
     if (!proxy || ![proxy.bundleURL.path.pathExtension isEqual:@"app"]) return NO;
-
+     
     NSArray *recordTags = nil;
     BOOL launchProhibited = NO;
     if ([proxy respondsToSelector:@selector(correspondingApplicationRecord)]) {
@@ -118,7 +118,7 @@ NSInteger parseNumberInteger(id number, NSInteger default_)
 }
 
 NSString *localize(NSString *key)
-{
+{	
 	static NSBundle *CHBundle;
 	static NSDictionary *englishLocalizations;
 
@@ -137,13 +137,14 @@ NSString *localize(NSString *key)
 			englishLocalizations = [NSDictionary dictionaryWithContentsOfFile:[CHBundle pathForResource:@"Localizable" ofType:@"strings" inDirectory:@"en.lproj"]];
 		}
 
+		 
 		NSString *engString = [englishLocalizations objectForKey:key];
 
 		if (engString) {
 			return engString;
 		}
 		else {
-
+			 
 			return key;
 		}
 	}

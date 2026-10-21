@@ -85,11 +85,13 @@
 	return specifier;
 }
 
+ 
 - (NSString *)topTitle
 {
 	return nil;
 }
 
+ 
 - (NSString *)plistName
 {
 	return nil;
@@ -147,7 +149,7 @@
 
 - (void)parseLocalizationsForSpecifiers:(NSArray *)specifiers
 {
-
+	 
 	NSMutableArray *mutableSpecifiers = (NSMutableArray *)specifiers;
 	for (PSSpecifier *specifier in mutableSpecifiers) {
 		HBLogDebug(@"title:%@",specifier.properties[@"label"]);

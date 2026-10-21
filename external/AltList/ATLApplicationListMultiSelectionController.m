@@ -66,7 +66,7 @@
 	{
 		return @(!_defaultApplicationSwitchValue);
 	}
-
+	
 	return @(_defaultApplicationSwitchValue);
 }
 

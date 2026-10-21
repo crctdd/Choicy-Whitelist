@@ -119,7 +119,7 @@ __attribute__((noinline, naked)) volatile kern_return_t litehook_vm_protect(mach
 	__asm("svc 0x80");
 	__asm("ret");
 #else
-
+	 
 	__asm("mov r12, #-14");
 	__asm("svc 0x80");
 	__asm("bx lr");
@@ -136,6 +136,7 @@ kern_return_t litehook_protect(vm_address_t addr, vm_size_t size)
 	return litehook_vm_protect(mach_task_self(), addr, size, false, VM_PROT_READ | VM_PROT_EXECUTE);
 }
 
+ 
 static void litehook_memcpy(void *target, void *source, size_t size)
 {
 	uint8_t *targetBytes = target;
@@ -186,14 +187,14 @@ const char *litehook_locate_dsc(void)
 		char *dyldSharedRegion   = getenv("DYLD_SHARED_REGION");
 		char *dyldSharedCacheDir = getenv("DYLD_SHARED_CACHE_DIR");
 		if (dyldSharedRegion && dyldSharedCacheDir && !strcmp(dyldSharedRegion, "private")) {
-
+			 
 			strlcpy(dscPath, dyldSharedCacheDir, PATH_MAX);
 			strlcat(dscPath, "/dyld_shared_cache", PATH_MAX);
 		}
-		else if (!access("/System/Library/Caches/com.apple.dyld", F_OK))                {
+		else if (!access("/System/Library/Caches/com.apple.dyld", F_OK))   {
 			strlcpy(dscPath, "/System/Library/Caches/com.apple.dyld/dyld_shared_cache", PATH_MAX);
 		}
-		else if (!access("/private/preboot/Cryptexes/OS/System/Library/Caches/com.apple.dyld", F_OK))                {
+		else if (!access("/private/preboot/Cryptexes/OS/System/Library/Caches/com.apple.dyld", F_OK))   {
 			strlcpy(dscPath, "/private/preboot/Cryptexes/OS/System/Library/Caches/com.apple.dyld/dyld_shared_cache", PATH_MAX);
 		}
 
@@ -353,16 +354,17 @@ void *litehook_find_dsc_symbol(const char *imagePath, const char *symbolName)
 	struct dyld_cache_local_symbols_entry_64 entry;
 
 	if (mainHeader.mappingOffset >= offsetof(struct dyld_cache_header, symbolFileUUID)) {
-
+		 
 		fseek(symbolDSC, symbolHeader.localSymbolsOffset + symbolInfo.entriesOffset + (sizeof(entry) * imageIndex), SEEK_SET);
 		if (fread(&entry, sizeof(entry), 1, symbolDSC) != 1) goto end;
 	}
 	else {
-
+		 
 		struct dyld_cache_local_symbols_entry entryOld;
 		fseek(symbolDSC, symbolHeader.localSymbolsOffset + symbolInfo.entriesOffset + (sizeof(entryOld) * imageIndex), SEEK_SET);
 		if (fread(&entryOld, sizeof(entryOld), 1, symbolDSC) != 1) goto end;
 
+		 
 		entry = (struct dyld_cache_local_symbols_entry_64) {
 			.dylibOffset = entryOld.dylibOffset,
 			.nlistStartIndex = entryOld.nlistStartIndex,
@@ -429,7 +431,7 @@ void _litehook_rebind_symbol_in_section(const mach_header_u *targetHeader, secti
 			}
 #endif
 			litehook_unprotect((vm_address_t)&symbolPointers[i], sizeof(void *));
-			if (auth) {
+			if (auth) { 
 				symbolPointers[i] = ptrauth_auth_and_resign(replacement, ptrauth_key_function_pointer, 0, ptrauth_key_process_independent_code, &symbolPointers[i]);
 			}
 			else {
@@ -470,7 +472,7 @@ void _litehook_apply_global_rebinds(const mach_header_u *mh, intptr_t vmaddr_sli
 	if (!gRebinds || gRebindCount == 0) return;
 
 	for (uint32_t i = 0; i < gRebindCount; i++) {
-
+		 
 		_litehook_apply_global_rebind(mh, &gRebinds[i]);
 	}
 }
@@ -480,6 +482,7 @@ void litehook_rebind_symbol(const mach_header_u *targetHeader, void *replacee, v
 	if (targetHeader == LITEHOOK_REBIND_GLOBAL) {
 		if (!replacee || !replacement) return;
 
+		 
 		Dl_info replacementInfo = {};
 		if (dladdr(replacement, &replacementInfo) == 0) return;
 		if (replacementInfo.dli_fname == NULL) return;
@@ -506,7 +509,7 @@ void litehook_rebind_symbol(const mach_header_u *targetHeader, void *replacee, v
 
 		for (uint32_t i = 0; i < _dyld_image_count(); i++) {
 			const mach_header_u *header = (const mach_header_u *)_dyld_get_image_header(i);
-
+			 
 			_litehook_apply_global_rebind(header, rebind);
 		}
 	}
@@ -520,7 +523,7 @@ void litehook_rebind_symbol(const mach_header_u *targetHeader, void *replacee, v
 					!strncmp(segCmd->segname, "__DATA", sizeof(segCmd->segname))) {
 					section_u *sections = (void *)((uintptr_t)lcp + sizeof(segment_command_u));
 					for (int j = 0; j < segCmd->nsects; j++) {
-						if ((sections[j].flags & SECTION_TYPE) == S_LAZY_SYMBOL_POINTERS ||
+						if ((sections[j].flags & SECTION_TYPE) == S_LAZY_SYMBOL_POINTERS || 
 							(sections[j].flags & SECTION_TYPE) == S_NON_LAZY_SYMBOL_POINTERS) {
 							_litehook_rebind_symbol_in_section(targetHeader, &sections[j], replacee, replacement);
 						}

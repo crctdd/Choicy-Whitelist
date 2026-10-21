@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+ 
 #define BIG_TO_HOST(n) _Generic((n), \
     int8_t: n, \
     uint8_t: n, \
@@ -224,4 +225,4 @@
     LOAD_COMMAND_APPLY_BYTE_ORDER(rpcmd, applier); \
     applier(rpcmd, path.offset);
 
-#endif
+#endif  

@@ -52,7 +52,7 @@
 - (void)setValue:(id)value { }
 - (void)setUserInteractionEnabled:(BOOL)enabled
 {
-
+     
     [super setUserInteractionEnabled:YES];
 }
 - (void)layoutSubviews

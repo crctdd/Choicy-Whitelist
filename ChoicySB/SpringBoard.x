@@ -51,7 +51,7 @@ static void CHPrepareShortcutLaunch(SBSApplicationShortcutItem *item, NSString *
     if ([item.type isEqualToString:CHShortcutWithout]) mode = CHLaunchWithoutAllTweaks;
     else if ([item.type isEqualToString:CHShortcutWith]) mode = CHLaunchWithAllTweaks;
     else if ([item.type isEqualToString:@"com.opa334.choicy.toggleSafeModeOnce"]) {
-
+         
         mode = CHSavedInjectionEnabled(bundleIdentifier) ? CHLaunchWithoutAllTweaks : CHLaunchWithAllTweaks;
     }
     if (mode == CHLaunchNormal) return;
@@ -75,11 +75,13 @@ BOOL choicy_shouldShow3DTouchOptionForDisableTweakInjectionState(BOOL disabled)
     CHLaunchMode mode = CHConsumePendingLaunchMode(CHPendingLaunchModes(), bundleIdentifier);
     if (mode != CHLaunchNormal) executionContext.environment = CHEnvironmentForLaunchMode(executionContext.environment, bundleIdentifier, mode);
 
+	 
 	if (kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber_iOS_13_0) {
 		choicy_applyEnvironmentChangesToExecutionContext(executionContext, bundleIdentifier);
-	}
+	}	
 }
 
+ 
 - (id)_bootstrapProcessWithExecutionContext:(FBProcessExecutionContext *)executionContext synchronously:(BOOL)synchronously error:(id *)error
 {
 	[self choicy_handleEnvironmentChangesForExecutionContext:executionContext forAppWithBundleIdentifier:executionContext.identity.embeddedApplicationIdentifier];
@@ -87,6 +89,7 @@ BOOL choicy_shouldShow3DTouchOptionForDisableTweakInjectionState(BOOL disabled)
 	return %orig;
 }
 
+ 
 - (id)_createProcessWithExecutionContext:(FBProcessExecutionContext *)executionContext
 {
 	[self choicy_handleEnvironmentChangesForExecutionContext:executionContext forAppWithBundleIdentifier:executionContext.identity.embeddedApplicationIdentifier];
@@ -94,6 +97,7 @@ BOOL choicy_shouldShow3DTouchOptionForDisableTweakInjectionState(BOOL disabled)
 	return %orig;
 }
 
+ 
 - (id)createApplicationProcessForBundleID:(NSString *)bundleIdentifier withExecutionContext:(FBProcessExecutionContext *)executionContext
 {
 	[self choicy_handleEnvironmentChangesForExecutionContext:executionContext forAppWithBundleIdentifier:bundleIdentifier];
@@ -186,7 +190,7 @@ BOOL choicy_shouldShow3DTouchOptionForDisableTweakInjectionState(BOOL disabled)
 		else {
 			toggleSafeModeOnceItem.localizedTitle = localize(@"LAUNCH_WITHOUT_TWEAKS");
 		}
-
+		
 		toggleSafeModeOnceItem.bundleIdentifierToLaunch = applicationID;
 		toggleSafeModeOnceItem.type = disableTweakInjection ? CHShortcutWith : CHShortcutWithout;
 

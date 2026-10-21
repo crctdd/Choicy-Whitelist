@@ -12,6 +12,7 @@
 #include "MachOLoadCommand.h"
 #include "MemoryStream.h"
 
+ 
 typedef struct __CodeDirectory {
 	uint32_t magic;
 	uint32_t length;
@@ -28,8 +29,10 @@ typedef struct __CodeDirectory {
 	uint8_t	pageSize;
 	uint32_t spare2;
 
+	 
 	uint32_t scatterOffset;
 
+	 
 	uint32_t teamOffset;
 } CS_CodeDirectory
 __attribute__ ((aligned(1)));
@@ -60,4 +63,4 @@ void csd_code_directory_update_special_slots(CS_DecodedBlob *codeDirBlob, CS_Dec
 void csd_code_directory_update(CS_DecodedBlob *codeDirBlob, MachO *macho);
 CS_DecodedBlob *csd_code_directory_init(MachO *macho, int hashType, bool alternate);
 
-#endif
+#endif  

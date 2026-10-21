@@ -38,20 +38,20 @@ MachO *choicy_fat_find_preferred_slice(Fat *fat)
 	cpu_type_t cputype;
 	cpu_subtype_t cpusubtype;
 	if (host_get_cpu_information(&cputype, &cpusubtype) != 0) { return NULL; }
-
+	
 	MachO *candidateSlice = NULL;
 
 	if (cputype == CPU_TYPE_ARM64) {
 		if (!candidateSlice && cpusubtype == CPU_SUBTYPE_ARM64E) {
-
+			 
 			if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_14_0) {
 				candidateSlice = fat_find_slice(fat, cputype, CPU_SUBTYPE_ARM64E | CPU_SUBTYPE_ARM64E_ABI_V2);
 				if (!candidateSlice && kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber_iOS_15_0) {
-
+					 
 					candidateSlice = fat_find_slice(fat, cputype, CPU_SUBTYPE_ARM64E);
 				}
 			}
-
+			 
 			else {
 				candidateSlice = fat_find_slice(fat, cputype, CPU_SUBTYPE_ARM64E);
 			}
@@ -59,7 +59,7 @@ MachO *choicy_fat_find_preferred_slice(Fat *fat)
 
 		if (!candidateSlice) {
 			if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_15_0) {
-
+				 
 				candidateSlice = fat_find_slice(fat, cputype, CPU_SUBTYPE_ARM64_V8);
 			}
 			if (!candidateSlice) {
@@ -84,7 +84,7 @@ MachO *choicy_fat_find_preferred_slice(Fat *fat)
 	static CHPMachoParser *sharedInstance = nil;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^ {
-
+		 
 		sharedInstance = [[CHPMachoParser alloc] init];
 	});
 	return sharedInstance;
@@ -103,6 +103,8 @@ MachO *choicy_fat_find_preferred_slice(Fat *fat)
 		_dependencyPathCache = [NSMutableDictionary new];
         _imageMetadataCache = [NSMutableDictionary new];
         _frameworkIdentifierCache = [NSMutableDictionary new];
+        _rootInputSignatures = [NSMutableDictionary new];
+        _metadataSignatures = [NSMutableDictionary new];
 
 		task_dyld_info_data_t dyldInfo = {0};
 		uint32_t count = TASK_DYLD_INFO_COUNT;
@@ -133,7 +135,14 @@ MachO *choicy_fat_find_preferred_slice(Fat *fat)
 
 - (NSDictionary *)metadataForMachoAtPath:(NSString *)path
 {
-    if (_imageMetadataCache[path]) return _imageMetadataCache[path];
+    NSDictionary *signature = CHWLInputSignatures(@[path]);
+    if (_imageMetadataCache[path] && [_metadataSignatures[path] isEqual:signature]) return _imageMetadataCache[path];
+    if (_imageMetadataCache[path]) {
+        [_dependencyPathCache removeAllObjects];
+        [_bundleIdentifierCache removeAllObjects];
+        [_frameworkIdentifierCache removeAllObjects];
+        [_rootInputSignatures removeAllObjects];
+    }
     NSMutableArray *dependencies = [NSMutableArray new];
     NSMutableArray *runpaths = [NSMutableArray new];
     NSMutableArray *weakDependencies = [NSMutableArray new];
@@ -157,6 +166,7 @@ MachO *choicy_fat_find_preferred_slice(Fat *fat)
     if (!found) return nil;
     NSDictionary *metadata = @{@"dependencies": dependencies.copy, @"runpaths": runpaths.copy, @"weakDependencies": weakDependencies.copy};
     _imageMetadataCache[path] = metadata;
+    _metadataSignatures[path] = signature;
     return metadata;
 }
 
@@ -222,6 +232,8 @@ MachO *choicy_fat_find_preferred_slice(Fat *fat)
         [_dependencyPathCache removeAllObjects];
         [_imageMetadataCache removeAllObjects];
         [_frameworkIdentifierCache removeAllObjects];
+        [_rootInputSignatures removeAllObjects];
+        [_metadataSignatures removeAllObjects];
     }
 }
 
@@ -231,27 +243,31 @@ MachO *choicy_fat_find_preferred_slice(Fat *fat)
         if (!path.length) return @{@"identifiers": [NSSet set], @"complete": @NO,
             @"failures": [NSSet setWithObject:@"目标路径不可用"]};
         NSString *root = path.stringByStandardizingPath;
-        if (_bundleIdentifierCache[root]) return @{@"identifiers": _bundleIdentifierCache[root], @"complete": @YES, @"failures": [NSSet set]};
+        if (_rootInputSignatures[root] && !CHWLInputSignaturesAreCurrent(_rootInputSignatures[root])) [self invalidateAnalysisCaches];
+        if (_bundleIdentifierCache[root]) return @{@"identifiers": _bundleIdentifierCache[root], @"complete": @YES,
+            @"failures": [NSSet set], @"inputs": _rootInputSignatures[root]};
         NSDictionary *analysis = [self dependencyAnalysisForMachoAtPath:root];
         NSSet *dependencies = analysis[@"paths"];
         NSMutableSet *failures = [analysis[@"failures"] mutableCopy];
         NSMutableSet *identifiers = [NSMutableSet new];
         NSMutableSet *images = dependencies.mutableCopy;
         [images addObject:root];
+        NSMutableSet *inputPaths = images.mutableCopy;
         for (NSString *image in images) {
             NSString *bundle = CHWLFrameworkBundlePath(image);
             if (!bundle) continue;
-            id cachedIdentifier = _frameworkIdentifierCache[bundle];
-            if (cachedIdentifier) {
-                if ([cachedIdentifier isKindOfClass:NSString.class]) [identifiers addObject:cachedIdentifier];
-                continue;
-            }
             NSString *parent = image.stringByDeletingLastPathComponent;
             NSArray *candidates = @[[bundle stringByAppendingPathComponent:@"Info.plist"],
                 [bundle stringByAppendingPathComponent:@"Resources/Info.plist"],
                 [parent stringByAppendingPathComponent:@"Info.plist"],
                 [parent stringByAppendingPathComponent:@"Resources/Info.plist"],
                 [bundle stringByAppendingPathComponent:@"Versions/Current/Resources/Info.plist"]];
+            [inputPaths addObjectsFromArray:candidates];
+            id cachedIdentifier = _frameworkIdentifierCache[bundle];
+            if (cachedIdentifier) {
+                if ([cachedIdentifier isKindOfClass:NSString.class]) [identifiers addObject:cachedIdentifier];
+                continue;
+            }
             for (NSString *candidate in candidates) {
                 id identifier = [NSDictionary dictionaryWithContentsOfFile:candidate][@"CFBundleIdentifier"];
                 if ([identifier isKindOfClass:NSString.class] && [identifier length]) {
@@ -271,7 +287,9 @@ MachO *choicy_fat_find_preferred_slice(Fat *fat)
         }
         BOOL complete = failures.count == 0;
         if (complete) _bundleIdentifierCache[root] = identifiers.copy;
-        return @{@"identifiers": identifiers.copy, @"complete": @(complete), @"failures": failures.copy};
+        NSDictionary *inputs = CHWLInputSignatures(inputPaths.allObjects);
+        _rootInputSignatures[root] = inputs;
+        return @{@"identifiers": identifiers.copy, @"complete": @(complete), @"failures": failures.copy, @"inputs": inputs};
     }
 }
 

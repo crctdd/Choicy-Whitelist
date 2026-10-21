@@ -24,7 +24,7 @@ PFSection *pfsec_init_from_macho(MachO *macho, const char *filesetEntryId, const
     PFSection *pfSection = NULL;
     MachO *machoToUse = NULL;
     if (filesetEntryId) {
-
+         
         for (uint32_t i = 0; i < macho->filesetCount; i++) {
             FilesetMachO *filesetMacho = &macho->filesetMachos[i];
             if (filesetMacho->underlyingMachO->slicesCount == 1) {
@@ -52,7 +52,7 @@ PFSection *pfsec_init_from_macho(MachO *macho, const char *filesetEntryId, const
             if (sectName) {
                 struct section_64 *section = NULL;
                 for (uint32_t i = 0; i < segment->command.nsects; i++) {
-                    struct section_64 *sectionCandidate = &segment->sections[i];
+                    struct section_64 *sectionCandidate = &segment->sections[i];	
                     if (!strncmp(sectionCandidate->sectname, sectName, sizeof(sectionCandidate->sectname))) {
                         section = sectionCandidate;
                     }
@@ -125,6 +125,7 @@ int pfsec_read_string_reloff(PFSection *section, uint64_t rel, char **outString)
     if (section->cache) {
         const char *curString = (const char *)&section->cache[rel];
 
+         
         if ((uint8_t *)&curString[strnlen(curString, section->size - rel)] >= &section->cache[section->size]) {
             return -1;
         }
@@ -133,7 +134,7 @@ int pfsec_read_string_reloff(PFSection *section, uint64_t rel, char **outString)
         return 0;
     }
     else {
-
+         
         return memory_stream_read_string(macho_get_stream(section->macho), section->fileoff + rel, outString);
     }
 }
@@ -181,7 +182,7 @@ int pfsec_set_cached(PFSection *section, bool cached)
     bool isCachedAlready = (bool)section->cache;
     if (cached != isCachedAlready) {
         if (cached) {
-
+             
             if (memory_stream_get_raw_pointer(macho_get_stream(section->macho))) return 0;
 
             void *cache = malloc(section->size);
@@ -233,7 +234,7 @@ int pfsec_find_memory_rel(PFSection *section, uint64_t searchStartOffset, uint64
 
 int pfsec_find_memory(PFSection *section, uint64_t searchStartAddr, uint64_t searchEndAddr, void *bytes, void *mask, size_t nbytes, uint16_t alignment, uint64_t *foundAddrOut)
 {
-
+     
     if (searchStartAddr < section->vmaddr) searchStartAddr = section->vmaddr;
     if (searchEndAddr < section->vmaddr) searchEndAddr = section->vmaddr;
     if (searchStartAddr > (section->vmaddr + section->size)) searchStartAddr = section->vmaddr + section->size;
@@ -268,7 +269,7 @@ uint64_t pfsec_find_next_inst(PFSection *section, uint64_t startAddr, uint32_t s
 
 uint64_t pfsec_find_function_start(PFSection *section, uint64_t midAddr)
 {
-
+     
     __block uint64_t start = 0;
     if (macho_enumerate_function_starts(section->macho, ^(uint64_t funcAddr, bool *stop){
         if (funcAddr <= midAddr) {
@@ -283,9 +284,10 @@ uint64_t pfsec_find_function_start(PFSection *section, uint64_t midAddr)
         }
     }
 
+     
     if (section->macho->machHeader.cputype == CPU_TYPE_ARM64) {
         if ((section->macho->machHeader.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
-
+             
             uint64_t addr = midAddr;
             while (addr > section->vmaddr && addr < (section->vmaddr + section->size)) {
                 uint32_t curInst = pfsec_read32(section, addr);
@@ -294,12 +296,13 @@ uint64_t pfsec_find_function_start(PFSection *section, uint64_t midAddr)
             }
         }
         else if ((section->macho->machHeader.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64_ALL) {
+             
 
-            uint64_t frameAddr = pfsec_find_prev_inst(section, midAddr, 0, 0x910003fd, 0xff8003ff);
+            uint64_t frameAddr = pfsec_find_prev_inst(section, midAddr, 0, 0x910003fd, 0xff8003ff);  
             if (frameAddr) {
-                uint64_t start = pfsec_find_prev_inst(section, frameAddr, 10, 0x29a003e0, 0x3be003e0);
+                uint64_t start = pfsec_find_prev_inst(section, frameAddr, 10, 0x29a003e0, 0x3be003e0);  
                 if (!start) {
-                    start = pfsec_find_prev_inst(section, frameAddr, 10, 0xd10003ff, 0xff8003ff);
+                    start = pfsec_find_prev_inst(section, frameAddr, 10, 0xd10003ff, 0xff8003ff);  
                 }
                 return start;
             }

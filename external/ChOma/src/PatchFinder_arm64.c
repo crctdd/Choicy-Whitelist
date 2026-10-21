@@ -3,6 +3,7 @@
 #include "arm64.h"
 #include <sys/mman.h>
 
+ 
 bool pfsec_arm64_scan_register_write(PFSection *section, arm64_register reg, uint64_t endAddr, uint64_t startAddr)
 {
 	if (startAddr >= endAddr) {
@@ -15,11 +16,12 @@ bool pfsec_arm64_scan_register_write(PFSection *section, arm64_register reg, uin
 
 	uint64_t writeAddr = 0;
 
+	 
 	uint32_t addInst = 0, addMask = 0;
 	arm64_gen_add_imm(reg, ARM64_REG_ANY, OPT_UINT64_NONE, &addInst, &addMask);
 	writeAddr = pfsec_find_prev_inst(section, endAddr - 4, instrBetween, addInst, addMask);
 	if (writeAddr) goto found_write;
-
+	 
 	uint32_t movInst = 0, movMask = 0;
 	for (int i = 0; i < 3; i++) {
 		char *variants = "knz";
@@ -31,6 +33,7 @@ bool pfsec_arm64_scan_register_write(PFSection *section, arm64_register reg, uin
 	writeAddr = pfsec_find_prev_inst(section, endAddr - 4, instrBetween, movInst, movMask);
 	if (writeAddr) goto found_write;
 
+	 
 	uint32_t ldrInst = 0, ldrMask = 0;
 	arm64_gen_ldr_imm(0, LDR_STR_TYPE_ANY, reg, ARM64_REG_ANY, OPT_UINT64_NONE, &ldrInst, &ldrMask);
 	writeAddr = pfsec_find_prev_inst(section, endAddr - 4, instrBetween, ldrInst, ldrMask);
@@ -42,6 +45,8 @@ bool pfsec_arm64_scan_register_write(PFSection *section, arm64_register reg, uin
 	pfsec_find_prev_inst(section, endAddr - 4, instrBetween, ldrInst, ldrMask);
 	if (writeAddr) goto found_write;
 
+	 
+
 	return false;
 
 found_write:
@@ -51,7 +56,7 @@ found_write:
 uint64_t pfsec_arm64_resolve_adrp_ldr_str_add_reference(PFSection *section, uint64_t adrpAddr, uint64_t ldrStrAddAddr)
 {
 	uint32_t ldrStrAddInst = pfsec_read32(section, ldrStrAddAddr);
-
+	
 	uint64_t imm = 0;
 	if (arm64_dec_ldr_imm(ldrStrAddInst, NULL, NULL, &imm, NULL, NULL) != 0) {
 		if (arm64_dec_ldrs_imm(ldrStrAddInst, NULL, NULL, &imm, NULL, NULL) != 0) {
@@ -97,7 +102,12 @@ uint64_t pfsec_arm64_resolve_adrp_ldr_str_add_reference_auto(PFSection *section,
 
 uint64_t pfsec_arm64_resolve_stub(PFSection *section, uint64_t stubAddr)
 {
+	 
 
+
+
+
+	 
 	uint32_t inst[3];
 	pfsec_read_at_address(section, stubAddr, inst, sizeof(inst));
 
@@ -110,7 +120,7 @@ uint64_t pfsec_arm64_resolve_stub(PFSection *section, uint64_t stubAddr)
 	if ((inst[0] & stubMask[0]) == stubInst[0] ||
 		(inst[1] & stubMask[1]) == stubInst[1] ||
 		(inst[2] & stubMask[2]) == stubInst[2]) {
-
+		 
 		uint64_t ptrAddr = pfsec_arm64_resolve_adrp_ldr_str_add_reference(section, stubAddr, stubAddr + 4);
 		if (ptrAddr) {
 			uint64_t targetAddr = 0;
@@ -119,6 +129,7 @@ uint64_t pfsec_arm64_resolve_stub(PFSection *section, uint64_t stubAddr)
 		}
 	}
 
+	 
 	return stubAddr;
 }
 

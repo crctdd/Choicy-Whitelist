@@ -71,6 +71,7 @@ static int buffered_stream_trim(MemoryStream *stream, size_t trimAtStart, size_t
 {
     BufferedStreamContext *context = stream->context;
 
+     
     context->subBufferStart += trimAtStart;
     context->subBufferSize -= (trimAtEnd + trimAtStart);
 

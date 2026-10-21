@@ -17,7 +17,7 @@ static char CHWLListStateKey;
 
 void CHWLRefreshMatches(void)
 {
-
+     
     static BOOL pending;
     static CFAbsoluteTime lastCheck;
     if (pending || CFAbsoluteTimeGetCurrent() - lastCheck < 2) return;
@@ -103,7 +103,7 @@ void CHWLDecorateRow(PSSpecifier *row)
     NSString *subtitle = identifier ?: [row propertyForKey:@"processIdentifier"] ?: path.lastPathComponent ?: @"";
     BOOL enabled = CHInjectionEnabled(preferences, identifier, path);
     BOOL privilegeEligible = CHWLPrivilegeEligibleForSpecifier(row);
-
+     
     BOOL matched = [[CHPTweakList sharedInstance] explicitTweaksForBundleIdentifier:
         (identifier ?: [row propertyForKey:@"targetBundleIdentifier"]) executableName:path.lastPathComponent].count > 0;
     NSDictionary *settings = identifier.length ? processPreferencesForApplication(preferences, identifier) :

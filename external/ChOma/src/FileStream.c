@@ -19,12 +19,14 @@ static int file_stream_write(MemoryStream *stream, uint64_t offset, size_t size,
 {
     FileStreamContext *context = stream->context;
 
+     
     if ((stream->flags & MEMORY_STREAM_FLAG_MUTABLE) == 0) return -1;
 
+     
     if ((stream->flags & MEMORY_STREAM_FLAG_OWNS_DATA) == 0) return -1;
 
     size_t sizeToExpand = 0;
-
+     
     if ((context->bufferStart + offset + size) > context->fileSize) {
         if (((stream->flags | MEMORY_STREAM_FLAG_AUTO_EXPAND) == 0) || _file_stream_context_is_trimmed(context)) {
             printf("Error: file_stream_write failed, file is not auto expandable.\n");
@@ -33,6 +35,7 @@ static int file_stream_write(MemoryStream *stream, uint64_t offset, size_t size,
         sizeToExpand = (context->bufferStart + offset + size) - context->fileSize;
     }
 
+     
     if (context->bufferStart + offset > context->fileSize) return -1;
 
     context->fileSize += sizeToExpand;
@@ -76,14 +79,14 @@ static int file_stream_trim(MemoryStream *stream, size_t trimAtStart, size_t tri
     }
 
     if ((stream->flags & MEMORY_STREAM_FLAG_MUTABLE) && !_file_stream_context_is_trimmed(context)) {
-
+         
         uint32_t newSize = context->bufferSize - trimAtStart - trimAtEnd;
         memory_stream_copy_data(stream, trimAtStart, stream, 0, newSize);
         ftruncate(context->fd, newSize);
     }
     else {
-
-        context->bufferStart += trimAtStart;
+         
+        context->bufferStart += trimAtStart; 
         context->bufferSize -= (trimAtStart + trimAtEnd);
     }
 
@@ -94,8 +97,10 @@ static int file_stream_expand(MemoryStream *stream, size_t expandAtStart, size_t
 {
     FileStreamContext *context = stream->context;
 
+     
     if (expandAtStart != 0) return -1;
-
+    
+     
     if (_file_stream_context_is_trimmed(context)) return -1;
 
     lseek(context->fd, 0, SEEK_END);

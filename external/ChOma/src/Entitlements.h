@@ -6,4 +6,4 @@
 CS_DecodedBlob *create_xml_entitlements_blob(const char *entitlementsFile);
 CS_DecodedBlob *create_der_entitlements_blob(const char *entitlementsFile);
 
-#endif
+#endif  

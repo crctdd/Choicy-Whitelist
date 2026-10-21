@@ -28,6 +28,8 @@
 	NSMutableDictionary<NSString *, NSSet *> *_dependencyPathCache;
     NSMutableDictionary<NSString *, NSDictionary *> *_imageMetadataCache;
     NSMutableDictionary *_frameworkIdentifierCache;
+    NSMutableDictionary *_rootInputSignatures;
+    NSMutableDictionary *_metadataSignatures;
 	DyldSharedCache *_sharedCache;
 }
 
@@ -36,6 +38,7 @@
 
 - (NSSet *)dependencyPathsForMachoAtPath:(NSString *)path;
 - (NSSet *)frameworkBundleIdentifiersForMachoAtPath:(NSString *)path;
+ 
 
 - (NSDictionary *)frameworkAnalysisForMachoAtPath:(NSString *)path;
 - (void)invalidateAnalysisCaches;

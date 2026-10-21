@@ -7,6 +7,7 @@
 #import "CHWLData.h"
 #import "CHWLListSupport.h"
 #import "CHPMachoParser.h"
+#import "CHWLFrameworkMatches.h"
 #import "../Shared.h"
 
 @interface PSSpecifier ()
@@ -73,20 +74,27 @@
 - (void)loadMatchesIfNeeded
 {
     if (self.isPrivilegedPage || self.analysis || self.loading) return;
+    NSString *path = CHWLExecutable(self.targetSpecifier);
+    NSDictionary *cached = self.refreshAnalysis ? nil :
+        [CHPTweakList.sharedInstance cachedCandidateAnalysisForExecutableAtPath:path];
+    if (cached) { self.analysis = cached; return; }
     self.loading = YES;
     NSUInteger request = ++self.request;
-    NSString *path = CHWLExecutable(self.targetSpecifier);
     BOOL refresh = self.refreshAnalysis;
     self.refreshAnalysis = NO;
     __weak typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
-        if (refresh) [[CHPMachoParser sharedInstance] invalidateAnalysisCaches];
+        if (refresh) {
+            [[CHPMachoParser sharedInstance] invalidateAnalysisCaches];
+            [CHPTweakList.sharedInstance invalidateCandidateAnalysisForExecutableAtPath:path];
+        }
         NSDictionary *analysis = [[CHPTweakList sharedInstance] candidateAnalysisForExecutableAtPath:path];
         dispatch_async(dispatch_get_main_queue(), ^{
             typeof(self) controller = weakSelf;
             if (!controller || controller.request != request) return;
             controller.analysis = analysis;
             controller.loading = NO;
+            CHWLPublishFrameworkAnalysis(path, analysis);
             if (controller.isViewLoaded && controller.view.window && controller.navigationController.topViewController == controller) [controller reloadSpecifiers];
             else controller->_specifiers = nil;
         });
@@ -117,6 +125,7 @@
 
 - (void)appendTweaks:(NSArray *)tweaks unconfirmed:(BOOL)unconfirmed
 {
+    (void)unconfirmed;
     BOOL editable = self.available && [self.settings[self.enabledKey] boolValue];
     for (CHPTweakInfo *tweak in tweaks) {
         BOOL loadedEarly = [dylibsBeforeChoicy containsObject:tweak.dylibName];
@@ -129,7 +138,6 @@
         [row setProperty:@(editable && !loadedEarly) forKey:@"enabled"];
         CHPPackageInfo *package = [CHPPackageInfo fetchPackageInfoForDylibName:tweak.dylibName];
         NSString *subtitle = package.name.length ? [NSString stringWithFormat:@"%@: %@", localize(@"PACKAGE"), package.name] : @"";
-        if (unconfirmed) subtitle = subtitle.length ? [subtitle stringByAppendingString:@" · 未确认匹配"] : @"未确认匹配";
         if (subtitle.length) [row setProperty:subtitle forKey:@"subtitle"];
         [_specifiers addObject:row];
     }
@@ -147,6 +155,8 @@
     self.loading = NO;
     self.request++;
     self.refreshAnalysis = YES;
+    [CHPTweakList.sharedInstance invalidateCandidateAnalysisForExecutableAtPath:CHWLExecutable(self.targetSpecifier)];
+    CHWLInvalidateFrameworkAnalysis(CHWLExecutable(self.targetSpecifier));
     [self reloadSpecifiers];
 }
 
@@ -155,6 +165,7 @@
     [super specifiers];
     if (!_specifiers) {
         _specifiers = [NSMutableArray new];
+        [self loadMatchesIfNeeded];
         BOOL available = self.available;
         BOOL enabled = [self.settings[self.enabledKey] boolValue];
         [_specifiers addObject:[PSSpecifier emptyGroupSpecifier]];
@@ -176,7 +187,6 @@
         [_specifiers addObject:mode];
         PSSpecifier *listGroup = [PSSpecifier emptyGroupSpecifier];
         [_specifiers addObject:listGroup];
-        [self loadMatchesIfNeeded];
         if (self.isPrivilegedPage) {
             [self appendTweaks:self.candidates unconfirmed:NO];
         } else if (!self.analysis) {

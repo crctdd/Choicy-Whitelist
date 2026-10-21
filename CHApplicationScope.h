@@ -9,6 +9,7 @@ static inline BOOL CHApplicationHasHiddenTags(id tags)
     return NO;
 }
 
+ 
 static inline BOOL CHVisibleApplicationMetadataAllowsPrivilege(NSString *identifier, NSString *bundlePath,
     id infoTags, id proxyTags, id recordTags, BOOL launchProhibited)
 {

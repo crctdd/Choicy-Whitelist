@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+@class CHPTweakInfo;
 enum { CHWLProcessCacheSchemaVersion = 4 };
 enum { CHWLProcessBundleIdentifierVersion = 1 };
 NSArray<NSDictionary *> *CHWLSortedRows(NSArray<NSDictionary *> *rows);
@@ -19,6 +20,8 @@ BOOL CHWLCustomConfigurationActive(BOOL privilegedPage, BOOL injectionEnabled,
     BOOL privilegeEligible, NSDictionary *settings);
 NSDictionary *CHWLInitializePrivilegedConfiguration(NSDictionary *settings, NSArray<NSString *> *names);
 NSArray *CHWLMatchingConfigurationTweaks(NSArray *tweaks, NSString *identifier,
+    NSString *executableName, NSSet *frameworks);
+NSArray<NSString *> *CHWLMatchReasons(CHPTweakInfo *tweak, NSString *identifier,
     NSString *executableName, NSSet *frameworks);
 NSDictionary *CHWLCustomCandidateGroups(NSArray *tweaks, NSArray *matches, NSDictionary *preferences,
     BOOL privilegeEligible, NSDictionary *settings);
