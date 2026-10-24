@@ -3,6 +3,7 @@
 enum { CHWLProcessCacheSchemaVersion = 4 };
 enum { CHWLProcessBundleIdentifierVersion = 1 };
 NSArray<NSDictionary *> *CHWLSortedRows(NSArray<NSDictionary *> *rows);
+CGFloat CHWLProcessRowHeight(BOOL enabled, BOOL matched, BOOL thirdParty);
 NSArray<NSDictionary *> *CHWLValidatedRecords(id cache, NSDictionary *context);
 NSArray<NSDictionary *> *CHWLRecordsByResolvingBundleIdentifiers(NSArray<NSDictionary *> *records,
     NSString *(^resolve)(NSString *path));
@@ -10,6 +11,9 @@ NSString *CHWLConfigurationSummary(BOOL injectionEnabled, BOOL privilegeEligible
 BOOL CHWLPrivilegesDisabled(BOOL injectionEnabled, BOOL privilegeEligible, NSDictionary *processPreferences);
 NSDictionary *CHWLProcessPreferencesBySetting(NSDictionary *settings, NSString *key, id value);
 NSArray<NSString *> *CHWLPrivilegedTweakNames(NSDictionary *preferences);
+NSArray<NSString *> *CHWLManualPrivilegedTweakNames(NSDictionary *preferences);
+BOOL CHWLPrivilegeCandidate(NSDictionary *preferences, NSString *name, BOOL isUIKit);
+NSDictionary *CHWLPreferencesBySettingManualPrivileges(NSDictionary *preferences, NSArray<NSString *> *names);
 BOOL CHWLIsPrivilegedTweak(NSDictionary *preferences, NSString *name, BOOL isUIKit);
 NSArray *CHWLPrivilegeCandidates(NSArray *tweaks);
 NSArray *CHWLConfigurationCandidates(NSArray *tweaks, NSDictionary *preferences,

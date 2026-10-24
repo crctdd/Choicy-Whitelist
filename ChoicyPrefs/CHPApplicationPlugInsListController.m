@@ -40,7 +40,7 @@
 @end
 
 @implementation CHPApplicationPlugInsListController
-- (NSString *)topTitle { return @"应用拓展"; }
+- (NSString *)topTitle { return localize(@"APP_PLUGINS"); }
 - (void)viewDidLoad
 {
     [self applySearchControllerHideWhileScrolling:NO];
@@ -111,7 +111,7 @@
     if (!_specifiers) {
         if (!_appPlugIns) [self loadPlugIns];
         if (!_appPlugIns) {
-            _specifiers = [NSMutableArray arrayWithObject:[PSSpecifier preferenceSpecifierNamed:@"正在读取应用拓展…"
+            _specifiers = [NSMutableArray arrayWithObject:[PSSpecifier preferenceSpecifierNamed:localize(@"LOADING_APP_EXTENSIONS")
                 target:self set:nil get:nil detail:nil cell:PSStaticTextCell edit:nil]];
             return _specifiers;
         }
@@ -130,7 +130,7 @@
             [row setProperty:@YES forKey:@"chwlFrameworkMatching"];
             [rows addObject:row];
         }
-        _specifiers = CHWLGroupRows(rows, @"应用拓展");
+        _specifiers = CHWLGroupRows(rows, @"APP_PLUGINS");
         CHWLRememberListState(self);
     }
     return _specifiers;

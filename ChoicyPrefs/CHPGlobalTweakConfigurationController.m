@@ -41,7 +41,7 @@
 
 - (void)viewDidLoad
 {
-	[self applySearchControllerHideWhileScrolling:YES];
+	[self applySearchControllerHideWhileScrolling:NO];
 	[super viewDidLoad];
 }
 
@@ -52,11 +52,9 @@
 
 		[self loadGlobalTweakBlacklist];
 
-		PSSpecifier *groupSpecifier = [PSSpecifier emptyGroupSpecifier];
+		PSSpecifier *groupSpecifier = _specifiers.firstObject;
 		groupSpecifier.name = localize(@"TWEAKS");
 		[groupSpecifier setProperty:localize(@"GLOBAL_TWEAK_CONFIGURATION_BOTTOM_NOTICE") forKey:@"footerText"];
-
-		[_specifiers addObject:groupSpecifier];
 
 		CHPTweakList *sharedTweakList = [CHPTweakList sharedInstance];
 
@@ -88,25 +86,7 @@
 			[tweakSpecifier setProperty:@(enabled) forKey:@"enabled"];
 			[tweakSpecifier setProperty:tweakInfo.dylibName forKey:@"key"];
 			[tweakSpecifier setProperty:@YES forKey:@"default"];
-			[tweakSpecifier setProperty:@YES forKey:@"chwlInspectBundleTargets"];
-			NSMutableArray<NSString *> *bundleIdentifiers = [NSMutableArray new];
-			if ([tweakInfo.explicitFilterBundles isKindOfClass:NSArray.class]) {
-				for (id identifier in tweakInfo.explicitFilterBundles) {
-					if ([identifier isKindOfClass:NSString.class] && [identifier length]) {
-						[bundleIdentifiers addObject:identifier];
-					}
-				}
-			}
-			[tweakSpecifier setProperty:bundleIdentifiers.copy forKey:@"chwlPlistBundleIdentifiers"];
-			NSMutableArray<NSString *> *executables = [NSMutableArray new];
-			if ([tweakInfo.filterExecutables isKindOfClass:NSArray.class]) {
-				for (id executable in tweakInfo.filterExecutables) {
-					if ([executable isKindOfClass:NSString.class] && [executable length]) {
-						[executables addObject:executable];
-					}
-				}
-			}
-			[tweakSpecifier setProperty:executables.copy forKey:@"chwlPlistExecutables"];
+			[self configureTargetInspectionForSpecifier:tweakSpecifier tweak:tweakInfo];
 
 			CHPPackageInfo *packageInfo = [CHPPackageInfo fetchPackageInfoForDylibName:tweakInfo.dylibName];
 			if (packageInfo) {
@@ -132,59 +112,6 @@
 	}
 
 	return _specifiers;
-}
-
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
-	PSSpecifier *specifier = [self specifierAtIndexPath:indexPath];
-	if ([[specifier propertyForKey:@"chwlInspectBundleTargets"] boolValue]) {
-		cell.selectionStyle = UITableViewCellSelectionStyleDefault;
-		cell.userInteractionEnabled = YES;
-	}
-	return cell;
-}
-
-- (NSIndexPath *)tableView:(UITableView *)tableView willSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-	PSSpecifier *specifier = [self specifierAtIndexPath:indexPath];
-	if ([[specifier propertyForKey:@"chwlInspectBundleTargets"] boolValue]) return indexPath;
-	return [super tableView:tableView willSelectRowAtIndexPath:indexPath];
-}
-
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-	PSSpecifier *specifier = [self specifierAtIndexPath:indexPath];
-	if ([[specifier propertyForKey:@"chwlInspectBundleTargets"] boolValue]) {
-		[tableView deselectRowAtIndexPath:indexPath animated:YES];
-		[self presentBundleTargetsForSpecifier:specifier];
-		return;
-	}
-	[super tableView:tableView didSelectRowAtIndexPath:indexPath];
-}
-
-- (void)presentBundleTargetsForSpecifier:(PSSpecifier *)specifier
-{
-	if (self.presentedViewController && self.presentedViewController != _searchController) return;
-	NSArray<NSString *> *identifiers = [specifier propertyForKey:@"chwlPlistBundleIdentifiers"];
-	NSArray<NSString *> *executables = [specifier propertyForKey:@"chwlPlistExecutables"];
-	NSMutableArray<NSString *> *sections = [NSMutableArray new];
-	if (identifiers.count) {
-		[sections addObject:[@"Filter → Bundles\n\n" stringByAppendingString:[identifiers componentsJoinedByString:@"\n"]]];
-	}
-	if (executables.count) {
-		[sections addObject:[@"Filter → Executables\n\n" stringByAppendingString:[executables componentsJoinedByString:@"\n"]]];
-	}
-	NSString *targets = sections.count ? [sections componentsJoinedByString:@"\n\n"] : @"未指定 Bundle ID 或进程名";
-	NSString *title = [[specifier propertyForKey:@"key"] stringByAppendingPathExtension:@"plist"];
-	UIAlertController *alert = [UIAlertController alertControllerWithTitle:title
-		message:targets
-		preferredStyle:UIAlertControllerStyleAlert];
-	[alert addAction:[UIAlertAction actionWithTitle:@"关闭" style:UIAlertActionStyleDefault handler:nil]];
-	alert.view.tintColor = UIColor.systemBlueColor;
-	UIViewController *presenter = self;
-	if (_searchController.active && _searchController.presentingViewController) presenter = _searchController;
-	[presenter presentViewController:alert animated:YES completion:nil];
 }
 
 - (void)presentNotLoadingFirstWarning

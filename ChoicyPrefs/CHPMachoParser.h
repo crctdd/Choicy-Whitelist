@@ -38,8 +38,8 @@
 
 - (NSSet *)dependencyPathsForMachoAtPath:(NSString *)path;
 - (NSSet *)frameworkBundleIdentifiersForMachoAtPath:(NSString *)path;
- 
-
+                                                                            
+                                                                  
 - (NSDictionary *)frameworkAnalysisForMachoAtPath:(NSString *)path;
 - (void)invalidateAnalysisCaches;
 

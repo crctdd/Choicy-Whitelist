@@ -32,6 +32,7 @@
 #import "CHWLComponentSupport.h"
 #import "CHWLExtensionRegistry.h"
 #import "CHWLListSupport.h"
+#import "CHWLProcessOrigin.h"
 #import <MobileCoreServices/LSApplicationWorkspace.h>
 
 NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsChanged";
@@ -58,6 +59,10 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
 @property (nonatomic) NSMutableDictionary *frameworkMatches;
 @property (nonatomic) BOOL bundleIdentifiersComplete;
 - (void)completeBundleIdentifiers;
+@property (nonatomic) BOOL processOriginsComplete;
+- (NSArray<NSString *> *)launchDaemonDirectories;
+- (NSString *)executablePathForLaunchDaemon:(NSDictionary *)dictionary source:(NSString *)source;
+- (void)completeProcessOrigins;
 @end
 
 @implementation CHPDaemonList
@@ -67,7 +72,7 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
 	static CHPDaemonList *sharedInstance = nil;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^ {
-		 
+		                     
 		sharedInstance = [[CHPDaemonList alloc] init];
 	});
 	return sharedInstance;
@@ -106,9 +111,7 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
     if (!cachePath) return nil;
     NSMutableDictionary *sources = [NSMutableDictionary new];
     NSMutableArray *directories = [CHWLSystemComponentDirectories() mutableCopy];
-    [directories addObjectsFromArray:@[@"/System/Library/LaunchDaemons", @"/System/Library/NanoLaunchDaemons", @"/Library/LaunchDaemons"]];
-    NSString *jailbreakDirectory = jbroot(@"/Library/LaunchDaemons");
-    if (jailbreakDirectory.length) [directories addObject:jailbreakDirectory];
+    [directories addObjectsFromArray:[self launchDaemonDirectories]];
     for (NSString *directory in directories) {
         NSDictionary *attributes = [NSFileManager.defaultManager attributesOfItemAtPath:directory error:nil];
         if (attributes) sources[directory] = @[attributes[NSFileModificationDate] ?: NSDate.distantPast];
@@ -144,6 +147,8 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
         info.executablePath = record[@"executablePath"];
         info.plistIdentifier = record[@"plistIdentifier"];
         info.bundleIdentifier = record[@"bundleIdentifier"];
+        info.launchDaemonPath = record[@"launchDaemonPath"];
+        info.thirdPartyProcess = [record[@"thirdPartyProcess"] boolValue];
         [list addObject:info];
     }
     self.daemonList = list.copy;
@@ -155,6 +160,7 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
     self.componentCatalogComplete = [cache[@"componentCatalogComplete"] boolValue];
     self.catalogScanAttempted = NO;
     self.bundleIdentifiersComplete = [cache[@"bundleIdentifierVersion"] isEqual:@(CHWLProcessBundleIdentifierVersion)];
+    self.processOriginsComplete = CHWLProcessOriginsAreCurrent(cache);
     self.loaded = YES;
     self.loading = NO;
     return YES;
@@ -169,12 +175,15 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
         NSMutableDictionary *record = [@{@"executablePath": info.executablePath} mutableCopy];
         if (info.plistIdentifier.length) record[@"plistIdentifier"] = info.plistIdentifier;
         if (info.bundleIdentifier.length) record[@"bundleIdentifier"] = info.bundleIdentifier;
+        if (info.launchDaemonPath.length) record[@"launchDaemonPath"] = info.launchDaemonPath;
+        record[@"thirdPartyProcess"] = @(info.thirdPartyProcess);
         [records addObject:record];
     }
     NSMutableDictionary *cache = [@{@"schemaVersion": @(CHWLProcessCacheSchemaVersion), @"scanComplete": @YES, @"context": context,
         @"processes": records, @"extensions": self.extensionList ?: @[], @"frameworkMatches": self.frameworkMatches.copy,
         @"componentCatalogComplete": @(self.componentCatalogComplete),
-        @"bundleIdentifierVersion": @(self.bundleIdentifiersComplete ? CHWLProcessBundleIdentifierVersion : 0)} mutableCopy];
+        @"bundleIdentifierVersion": @(self.bundleIdentifiersComplete ? CHWLProcessBundleIdentifierVersion : 0),
+        @"processOriginVersion": @(self.processOriginsComplete ? CHWLProcessOriginVersion : 0)} mutableCopy];
     if (self.applicationExtensionEntry) cache[@"applicationExtensionPage"] = self.applicationExtensionEntry;
     if (!CHWLValidatedRecords(cache, context)) return;
     [NSFileManager.defaultManager createDirectoryAtPath:path.stringByDeletingLastPathComponent withIntermediateDirectories:YES attributes:nil error:nil];
@@ -216,7 +225,11 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
     (void)info;
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
         [self.scanLock lock];
-        @try { self.applicationExtensionEntry = nil; self.applicationExtensionsInvalidated = YES; }
+        @try {
+            self.applicationExtensionEntry = nil;
+            self.applicationExtensionsInvalidated = YES;
+            self.processOriginsComplete = NO;
+        }
         @finally { [self.scanLock unlock]; }
         [CHPTweakList.sharedInstance invalidateAllCandidateAnalyses];
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -263,7 +276,7 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
 }
 - (NSSet *)cachedFrameworkIdentifiersForPath:(NSString *)path signature:(NSDictionary *)signature
 {
-     
+                                                                                               
     [self.scanLock lock];
     @try {
         if (!_loaded && !_loading) [self restoreCache];
@@ -318,7 +331,12 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
                 }];
                 [self saveCache];
             }
-            if (!wasLoaded || upgraded || retried) [self sendReloadToObservers];
+            BOOL originsUpgraded = !self.processOriginsComplete || retried;
+            if (originsUpgraded) {
+                [self completeProcessOrigins];
+                [self saveCache];
+            }
+            if (!wasLoaded || upgraded || retried || originsUpgraded) [self sendReloadToObservers];
             return;
         }
         [self scanDaemonList];
@@ -328,12 +346,14 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
 
 - (void)completeBundleIdentifiers
 {
-     
+                                                                                            
     NSMutableArray *records = [NSMutableArray new];
     for (CHPDaemonInfo *info in self.daemonList) {
         NSMutableDictionary *record = [@{@"executablePath": info.executablePath} mutableCopy];
         if (info.plistIdentifier) record[@"plistIdentifier"] = info.plistIdentifier;
         if (info.bundleIdentifier) record[@"bundleIdentifier"] = info.bundleIdentifier;
+        if (info.launchDaemonPath) record[@"launchDaemonPath"] = info.launchDaemonPath;
+        record[@"thirdPartyProcess"] = @(info.thirdPartyProcess);
         [records addObject:record];
     }
     NSArray *resolved = CHWLRecordsByResolvingBundleIdentifiers(records, ^NSString *(NSString *path) {
@@ -345,11 +365,78 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
         info.executablePath = record[@"executablePath"];
         info.plistIdentifier = record[@"plistIdentifier"];
         info.bundleIdentifier = record[@"bundleIdentifier"];
+        info.launchDaemonPath = record[@"launchDaemonPath"];
+        info.thirdPartyProcess = [record[@"thirdPartyProcess"] boolValue];
         [updated addObject:info];
     }
-     
+                                                                                
     self.daemonList = updated.copy;
     self.bundleIdentifiersComplete = YES;
+}
+
+- (NSArray<NSString *> *)launchDaemonDirectories
+{
+    NSMutableArray *directories = [@[@"/System/Library/LaunchDaemons",
+        @"/System/Library/NanoLaunchDaemons", @"/Library/LaunchDaemons"] mutableCopy];
+    NSString *jailbreakDirectory = jbroot(@"/Library/LaunchDaemons");
+    if (jailbreakDirectory.length && ![directories containsObject:jailbreakDirectory]) [directories addObject:jailbreakDirectory];
+    return directories.copy;
+}
+
+- (NSString *)executablePathForLaunchDaemon:(NSDictionary *)dictionary source:(NSString *)source
+{
+    if (![dictionary isKindOfClass:NSDictionary.class]) return nil;
+    id path = dictionary[@"Program"];
+    if (![path isKindOfClass:NSString.class] || ![path length]) {
+        id arguments = dictionary[@"ProgramArguments"];
+        path = [arguments isKindOfClass:NSArray.class] && [arguments count] ? [arguments firstObject] : nil;
+    }
+    if (![path isKindOfClass:NSString.class] || ![path isAbsolutePath]) return nil;
+    NSString *jailbreakRoot = jbroot(@"/");
+    if (CHWLPathIsInsideDirectory(source, jbroot(@"/Library/LaunchDaemons")) &&
+        !CHWLPathIsInsideDirectory(path, jailbreakRoot)) {
+        NSString *candidate = jbroot((NSString *)path);
+        if (candidate.length && [NSFileManager.defaultManager fileExistsAtPath:candidate]) return candidate;
+    }
+    return path;
+}
+
+- (void)completeProcessOrigins
+{
+    NSMutableDictionary *sources = [NSMutableDictionary new];
+    BOOL needsSources = NO;
+    for (CHPDaemonInfo *info in self.daemonList) {
+        if (!info.launchDaemonPath.length) { needsSources = YES; break; }
+    }
+    if (needsSources) {
+        for (NSString *directory in [self launchDaemonDirectories]) {
+            for (NSString *file in [NSFileManager.defaultManager contentsOfDirectoryAtPath:directory error:nil]) {
+                if (![file.pathExtension isEqualToString:@"plist"]) continue;
+                NSString *source = [directory stringByAppendingPathComponent:file];
+                NSDictionary *dictionary = [NSDictionary dictionaryWithContentsOfFile:source];
+                NSString *path = [self executablePathForLaunchDaemon:dictionary source:source].stringByResolvingSymlinksInPath;
+                if (path.length && !sources[path]) sources[path] = source;
+            }
+        }
+    }
+    NSString *jailbreakRoot = [jbroot(@"/") stringByResolvingSymlinksInPath];
+    NSMutableArray *updated = [NSMutableArray new];
+    for (CHPDaemonInfo *info in self.daemonList) {
+        CHPDaemonInfo *copy = [CHPDaemonInfo new];
+        copy.executablePath = info.executablePath;
+        copy.plistIdentifier = info.plistIdentifier;
+        copy.bundleIdentifier = info.bundleIdentifier;
+        NSString *path = info.executablePath.stringByResolvingSymlinksInPath;
+        copy.launchDaemonPath = info.launchDaemonPath ?: (path.length ? sources[path] : nil);
+        NSString *application = CHWLOwningApplicationPath(path);
+        NSDictionary *appInfo = application.length ? [NSDictionary dictionaryWithContentsOfFile:
+            [application stringByAppendingPathComponent:@"Info.plist"]] : nil;
+        copy.thirdPartyProcess = CHWLIsThirdPartyProcess(path,
+            copy.launchDaemonPath.stringByResolvingSymlinksInPath, jailbreakRoot, appInfo[@"CFBundleIdentifier"]);
+        [updated addObject:copy];
+    }
+    self.daemonList = updated.copy;
+    self.processOriginsComplete = YES;
 }
 
 - (void)mergeComponentScan:(NSDictionary *)components intoDaemons:(NSMutableArray *)daemons
@@ -376,12 +463,9 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
 
 	self.loading = YES;
 
-     
+                                                                                       
     NSMutableArray<NSURL *> *daemonPlists = [NSMutableArray new];
-    NSMutableArray<NSString *> *directories = [@[@"/System/Library/LaunchDaemons",
-        @"/System/Library/NanoLaunchDaemons", @"/Library/LaunchDaemons"] mutableCopy];
-    NSString *jailbreakDirectory = jbroot(@"/Library/LaunchDaemons");
-    if (jailbreakDirectory.length && ![directories containsObject:jailbreakDirectory]) [directories addObject:jailbreakDirectory];
+    NSArray<NSString *> *directories = [self launchDaemonDirectories];
     for (NSString *directory in directories) {
         NSArray *entries = [NSFileManager.defaultManager contentsOfDirectoryAtURL:[NSURL fileURLWithPath:directory]
             includingPropertiesForKeys:nil options:0 error:nil];
@@ -401,24 +485,13 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
 		
 		CHPDaemonInfo *info = [[CHPDaemonInfo alloc] init];
 
-		info.executablePath = [daemonDictionary objectForKey:@"Program"];
+        info.executablePath = [self executablePathForLaunchDaemon:daemonDictionary source:daemonPlistURL.path];
+        info.launchDaemonPath = daemonPlistURL.path;
+        id label = daemonDictionary[@"Label"];
+        info.plistIdentifier = [label isKindOfClass:NSString.class] && [label length] ? label :
+            daemonPlistURL.lastPathComponent.stringByDeletingPathExtension;
 
-		if (!info.executablePath) {
-			NSArray *programArguments = [daemonDictionary objectForKey:@"ProgramArguments"];
-			if (programArguments.count > 0) {
-				info.executablePath = programArguments.firstObject;
-			}
-		}
-
-        if (info.executablePath.length) {
-            NSString *jailbreakRoot = jbroot(@"/");
-            BOOL jailbreakDaemon = jailbreakDirectory.length && [daemonPlistURL.path hasPrefix:[jailbreakDirectory stringByAppendingString:@"/"]];
-            if (jailbreakDaemon && jailbreakRoot.length && ![jailbreakRoot isEqualToString:@"/"] &&
-                ![info.executablePath hasPrefix:jailbreakRoot]) info.executablePath = jbroot(info.executablePath);
-        }
-		info.plistIdentifier = [daemonDictionary objectForKey:@"Label"] ?: [daemonPlistURL lastPathComponent].stringByDeletingPathExtension;
-
-		 
+		                                  
 		if (info.executablePath && [[NSFileManager defaultManager] fileExistsAtPath:info.executablePath] && ![info.plistIdentifier hasSuffix:@"Jetsam"] && ![info.plistIdentifier hasSuffix:@"SimulateCrash"] && ![info.plistIdentifier hasSuffix:@"_v2"] && ![info.plistIdentifier isEqualToString:kSpringboardBundleID]) {
 			if (![self daemonList:daemonListM containsExecutableName:info.executableName]) {
 				[daemonListM addObject:info];
@@ -430,10 +503,10 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
 
 	NSMutableArray *additionalPotentialDaemons = [NSMutableArray new];
 
-	 
-
-
-
+	                                                                                                                     
+	                                                          
+	                                                                                                                        
+	                                                                     
 	DIR *dir;
     struct dirent *dp;
     dir = opendir("/usr/libexec");
@@ -466,7 +539,7 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
 		}
 	}
 
-	[daemonListM sortUsingComparator:^NSComparisonResult(CHPDaemonInfo *a, CHPDaemonInfo *b) {  
+	[daemonListM sortUsingComparator:^NSComparisonResult(CHPDaemonInfo *a, CHPDaemonInfo *b) {                       
 		return [[a executableName] localizedCaseInsensitiveCompare:[b executableName]];
 	}];
 
@@ -484,6 +557,7 @@ NSString *const CHWLApplicationExtensionsChanged = @"CHWLApplicationExtensionsCh
     self.loadedContext = [self cacheContext];
     [self completeBundleIdentifiers];
 	self.loading = NO;
+    [self completeProcessOrigins];
 	self.loaded = _daemonList.count > 0;
 
 	HBLogDebugWeak(@"updateDaemonListIfNeeded end");

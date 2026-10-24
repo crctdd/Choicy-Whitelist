@@ -15,8 +15,8 @@
 
 #define MEMORY_STREAM_SIZE_INVALID (size_t)-1
 
- 
-
+                                                                     
+                                                                       
 typedef struct s_MemoryStream {
    void *context;
    uint32_t flags;
@@ -57,4 +57,4 @@ void memory_stream_free(MemoryStream *stream);
 int memory_stream_copy_data(MemoryStream *originStream, uint64_t originOffset, MemoryStream *targetStream, uint64_t targetOffset, size_t size);
 int memory_stream_find_memory(MemoryStream *stream, uint64_t searchStartOffset, uint64_t searchEndOffset, void *bytes, void *mask, size_t nbytes, uint16_t alignment, uint64_t *foundOffsetOut);
 
-#endif  
+#endif                   

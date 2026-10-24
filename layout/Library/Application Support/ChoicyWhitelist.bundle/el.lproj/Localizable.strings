@@ -1,79 +1,93 @@
-"PROCESS_CONFIGURATION" = "Διαδικασία διαμόρφωσης";
-
+"ADD" = "Προσθήκη";
+"ADDITIONAL_EXECUTABLES" = "Πρόσθετα εκτελέσιμα";
+"ADDITIONAL_EXECUTABLES_FOOTER" = "Εδώ μπορείτε να προσθέσετε επιπλέον εκτελέσιμα που δεν είναι διεργασίες παρασκηνίου και να εφαρμόσετε ρυθμίσεις tweaks σε αυτά.\n\nΠροειδοποίηση: Αυτή η ενότητα απευθύνεται σε προχωρημένους χρήστες. Χρησιμοποιήστε τη μόνο αν γνωρίζετε τι κάνετε.";
+"ALLOW" = "Να επιτρέπεται";
 "APPLICATIONS" = "Εφαρμογές";
-"DAEMONS" = "Υπηρεσία συστήματος";
- 
- 
-"DISABLE_TWEAK_INJECTION" = "Απενεργοποίηση διακοπής tweak";
-"LAUNCH_WITHOUT_TWEAKS" = "Λειτουργία χωρίς tweaks";
-"LAUNCH_WITH_TWEAKS" = "Λειτουργία με tweaks";
-"LAUNCH_WITHOUT_TWEAKS_OPTION" = "Λειτουργία χωρίς επιλογή tweaks";
-"LAUNCH_WITH_TWEAKS_OPTION" = "Λειτουργία με επιλογή tweaks";
-"APP_OPTIONS" = "Επιλογές εφαρμογής";
-"APP_OPTIONS_FOOTER" = "Επιλογές εφαρμογής footer";
-"CUSTOM_TWEAK_CONFIGURATION" = "Προσαρμοσμένη διαμόρφωση tweak";
- 
- 
- 
- 
-"TWEAKS_DISABLED" = "Απενεργοποίηση tweaks";
+"APP_OPTIONS" = "Επιλογές εφαρμογών";
+"APP_OPTIONS_FOOTER" = "· Η «Εκκίνηση χωρίς tweaks» αποκλείει την έγχυση όλων των tweaks του jailbreak για αυτή την εκκίνηση.\n· Η «Εκκίνηση με tweaks» επιτρέπει την έγχυση όλων των tweaks του jailbreak για αυτή την εκκίνηση.";
+"APP_PLUGINS" = "Επεκτάσεις εφαρμογών";
+"BUNDLE_TARGETS_HEADER" = "Filter → Bundles (Bundle ID)";
+"CACHE_REMOVED_MESSAGE" = "Κλείστε και ανοίξτε ξανά τις «Ρυθμίσεις». Οι διεργασίες συστήματος θα σαρωθούν ξανά στην επόμενη επίσκεψη στη σελίδα τους. Οι ρυθμίσεις έγχυσης θα διατηρηθούν.";
+"CACHE_REMOVED_TITLE" = "Η προσωρινή μνήμη διεργασιών διαγράφηκε";
+"CANCEL" = "Ακύρωση";
+"CANDIDATES_COMPLETE_FOOTER" = "Οι αντιστοιχίσεις βασίζονται σε αναγνωριστικά στόχων, εκτελέσιμα και αναγνώσιμες εξαρτήσεις πλαισίων. Η στατική ανάλυση δεν καλύπτει κάθε δυναμική φόρτωση· τα tweaks που λείπουν μπορούν να ρυθμιστούν χειροκίνητα από την «Εμφάνιση άλλων tweaks».";
+"CANDIDATES_INCOMPLETE_FOOTER" = "Ορισμένες εξαρτήσεις ή πλαίσια δεν αναγνωρίστηκαν, οπότε τα αποτελέσματα είναι ελλιπή. Οι επιβεβαιωμένες αντιστοιχίσεις διατηρούνται και τα μη επιβεβαιωμένα tweaks εμφανίζονται για χειροκίνητη ρύθμιση. Δεν επιτρέπεται αυτόματα κανένα tweak και δεν εκκαθαρίζονται λίστες.";
+"CHOICYLOADER_ADVICE" = "Για παράκαμψη αυτού του προβλήματος, εγκαταστήστε το ChoicyLoader από το αποθετήριο https://opa334.github.io.";
+"CLOSE" = "Κλείσιμο";
+"CONTINUE" = "Συνέχεια";
+"CONFIRMED_RECOGNITION" = "Επιβεβαιωμένες αντιστοιχίσεις";
 "CUSTOM" = "Προσαρμοσμένο";
- 
-"SHOW_RECOMMENDED_DAEMONS" = "Προειδοποίηση υπηρεσίας συστήματος";
-"SHOW_ALL_DAEMONS" = "Προβολή όλων των υπηρεσιών συστημάτων";
-"SYSTEM_APPLICATIONS" = "Σύστημα εφαρμογών";
-"USER_APPLICATIONS" = "Εφαρμογές χρήστη";
-"HIDDEN_APPLICATIONS" = "Κρυμμένες εφαρμοφές";
-"GLOBAL_CONFIGURATION" = "Διεθνής διαμόρφωση";
-"GLOBAL_TWEAK_CONFIGURATION" = "Διεθνής διαμόρφωση tweak";
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-"CREDITS" = "Πιστώσεις";
-"RESPRING" = "Επανεκκίνηση/Επαναφορά";
-"WARNING_ALERT_TITLE" = "Προειδοποίηση τίτλου";
-"THE_INJECTION_PLATFORM" = "Διακοπή πλατφορμας";
-"TWEAKS_LOADING_BEFORE_CHOICY_ALERT_MESSAGE" = "Μήνυμα προειδοποίησης";
-"CHOICYLOADER_ADVICE" = "Συμβουλές επιλογής φορτίων";
-"OPEN_REPO" = "Άνοιγμα repo";
+"CUSTOM_PRIVILEGED_TWEAKS" = "Προσαρμοσμένα προνομιούχα tweaks";
+"CUSTOM_TWEAK_CONFIGURATION" = "Προσαρμοσμένη ρύθμιση tweaks";
+"DAEMONS" = "Διεργασίες συστήματος";
+"DEFAULT_RECOGNITION" = "Αυτόματη αναγνώριση";
+"DENY" = "Αποκλεισμός";
+"DETECTING_FRAMEWORK_MATCHES" = "Έλεγχος αντιστοιχίσεων πλαισίων…";
+"DETECTING_INJECTION" = "Έλεγχος αντίστοιχων tweaks…";
+"DEVELOPER_OPA334" = "Προγραμματιστής (opa334)";
+"DISABLE_PRIVILEGED_TWEAKS" = "Απενεργοποίηση προνομιούχων tweaks";
 "DONT_SHOW_AGAIN" = "Να μην εμφανιστεί ξανά";
-"CLOSE" = "Κλείστε";
-"DAEMON_LIST_BOTTOM_NOTICE" = "Υπηρεσία συστήματος γνωστοποίησης";
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-
-
-"ENABLE_TWEAK_INJECTION" = "Enable Tweak Injection";
-
-"APP_PLUGINS" = "Application Extensions";
-
-"REBUILD_PROCESS_CACHE" = "Rebuild Process Cache";
-
-"PROCESS_CONFIGURATION_FOOTER" = "· Tweak injection is disabled by default.\n· Enable injection to also use custom tweak configuration.\n· Privileged tweaks are UIKit tweaks and apply only to visible Applications.";
-"DISABLE_PRIVILEGED_TWEAKS" = "Disable Privileged Tweaks";
+"ENABLE" = "Ενεργοποίηση";
+"ENABLE_TWEAK_INJECTION" = "Ενεργοποίηση έγχυσης tweaks";
+"ERROR" = "Σφάλμα";
+"ERROR_FILE_NOT_FOUND" = "Δεν βρέθηκε αρχείο στην επιλεγμένη διαδρομή.";
+"ERROR_FILE_NO_EXECUTABLE" = "Το αρχείο στην επιλεγμένη διαδρομή δεν φαίνεται να είναι εκτελέσιμο.";
+"EXECUTABLE_TARGETS_HEADER" = "Filter → Executables (ονόματα διεργασιών)";
+"EXPLICIT_INJECTION_PENDING" = "Το tweak στοχεύει ρητά αυτή την καταχώριση· αναμονή ενεργοποίησης";
+"FRAMEWORK_ANALYSIS_INCOMPLETE" = "Η ανάλυση πλαισίων δεν ολοκληρώθηκε· δεν βρέθηκαν ακόμη ρητές αντιστοιχίσεις";
+"GLOBAL_CONFIGURATION" = "Καθολική ρύθμιση";
+"GLOBAL_TWEAK_CONFIGURATION" = "Καθολική ρύθμιση tweaks";
+"GLOBAL_TWEAK_CONFIGURATION_BOTTOM_NOTICE" = "· Μπορείτε να παρακάμψετε αυτή τη ρύθμιση για έναν μεμονωμένο στόχο ενεργοποιώντας την «Παράκαμψη καθολικής ρύθμισης tweaks» στη σελίδα ρυθμίσεών του. Η επιλογή εμφανίζεται μόνο αφού απενεργοποιήσετε τουλάχιστον ένα tweak στην «Καθολική ρύθμιση tweaks» (αυτή τη σελίδα).\n· Πατήστε μια καταχώριση για να δείτε τους στόχους έγχυσης του tweak.";
+"GREYED_OUT_ENTRIES" = "Γκριζαρισμένες καταχωρίσεις";
+"HIDDEN_APPLICATIONS" = "Κρυφές εφαρμογές";
+"LAUNCH_WITHOUT_TWEAKS" = "Εκκίνηση χωρίς tweaks";
+"LAUNCH_WITHOUT_TWEAKS_OPTION" = "Επιλογή «Εκκίνηση χωρίς tweaks»";
+"LAUNCH_WITH_TWEAKS" = "Εκκίνηση με tweaks";
+"LAUNCH_WITH_TWEAKS_OPTION" = "Επιλογή «Εκκίνηση με tweaks»";
+"LOADING_APP_EXTENSIONS" = "Φόρτωση επεκτάσεων εφαρμογών…";
+"MANAGE_PRIVILEGED_TWEAKS" = "Προσθήκη/αφαίρεση προνομιούχων tweaks";
+"MANUAL_RECOGNITION" = "Χειροκίνητη προσθήκη";
+"MATCHING_EXPLICIT_FOOTER" = "Εμφανίζονται μόνο υποψήφιοι των οποίων το plist ορίζει ρητά αυτό το Bundle ID ή το εκτελέσιμο. Περιλαμβάνονται και απενεργοποιημένα στοιχεία· η πραγματική φόρτωση καθορίζεται κατά την εκτέλεση.";
+"MATCHING_FRAMEWORK_FOOTER" = "Οι υποψήφιοι αντιστοιχίζονται βάσει αναγνωριστικού στόχου, εκτελέσιμου και άμεσα ή έμμεσα συνδεδεμένων πλαισίων λογισμικού. Οι αντιστοιχίσεις πλαισίων συμπληρώνονται στο παρασκήνιο. Περιλαμβάνονται και απενεργοποιημένα στοιχεία· η πραγματική φόρτωση καθορίζεται κατά την εκτέλεση.";
+"MATCHING_TWEAKS" = "Αντίστοιχα tweaks";
+"MODIFIED_BY_CRCTDD" = "Τροποποίηση από (crctdd)";
+"MORE_ACTIONS" = "Περισσότερες ενέργειες";
+"NO_ADDABLE_TWEAKS" = "Δεν υπάρχουν tweaks διαθέσιμα για προσθήκη";
+"NO_CONFIGURABLE_TWEAKS" = "Δεν υπάρχουν tweaks διαθέσιμα για ρύθμιση";
+"NO_DECLARED_TARGETS" = "Δεν έχει οριστεί Bundle ID ή όνομα διεργασίας";
+"NO_MATCHING_INJECTION" = "Δεν εντοπίστηκαν αντίστοιχα tweaks";
+"NO_MATCHING_TWEAKS" = "Δεν βρέθηκαν αντίστοιχα tweaks";
+"NO_UIKIT_TWEAKS" = "Δεν εντοπίστηκαν tweaks UIKit";
+"OK" = "Εντάξει";
+"OPEN_REPO" = "Άνοιγμα αποθετηρίου";
+"OTHER_TWEAKS_FOOTER" = "Οι καταχωρίσεις προορίζονται για χειροκίνητη ρύθμιση και δεν σημαίνουν ότι το tweak ορίζει ρητά αυτόν τον στόχο. Η επιλογή επιτρέπει φόρτωση μόνο αν πληρούνται και οι αρχικές συνθήκες έγχυσης του tweak.";
+"OTHER_TWEAKS_UNCONFIRMED" = "Μη επιβεβαιωμένες αντιστοιχίσεις";
+"OVERWRITE_GLOBAL_TWEAK_CONFIGURATION" = "Παράκαμψη καθολικής ρύθμισης tweaks";
+"PACKAGE" = "Πακέτο";
+"PATH" = "Διαδρομή";
+"PRIVILEGED_TWEAKS" = "Προνομιούχα tweaks";
+"PRIVILEGED_TWEAKS_FOOTER" = "Υποστηρίζονται τα tweaks UIKit που αναγνωρίζονται αυτόματα και όσα προστίθενται χειροκίνητα. Τα προνόμια ισχύουν μόνο για κανονικές εφαρμογές στις «Εφαρμογές» και μπορούν να παρακάμψουν τον διακόπτη έγχυσης και τις κανονικές προσαρμοσμένες λίστες τους. Εξακολουθούν να ισχύουν η καθολική ρύθμιση tweaks, τα «Προσαρμοσμένα προνομιούχα tweaks» και η «Απενεργοποίηση προνομιούχων tweaks» της εφαρμογής. Οι διεργασίες συστήματος, οι κρυφές εφαρμογές και οι επεκτάσεις εφαρμογών δεν αποκτούν προνόμια· η έγχυση πρέπει να ενεργοποιηθεί χειροκίνητα για αυτές. Οι αλλαγές ισχύουν από την επόμενη εκκίνηση του στόχου.";
+"PRIVILEGES_DISABLED_SHORT" = "Χωρίς προνόμια";
+"PROCESS_CONFIGURATION" = "Ρύθμιση διεργασιών";
+"PROCESS_CONFIGURATION_FOOTER" = "· Η έγχυση tweaks είναι απενεργοποιημένη από προεπιλογή.\n· Μετά τη χειροκίνητη ενεργοποίηση της έγχυσης μπορείτε να χρησιμοποιήσετε και προσαρμοσμένη ρύθμιση tweaks.\n· Τα προνομιούχα tweaks διατίθενται μόνο για τις «Εφαρμογές».";
+"REBUILD_PROCESS_CACHE" = "Αναδημιουργία προσωρινής μνήμης διεργασιών";
+"REDETECT_TWEAKS" = "Επανάληψη ανίχνευσης tweaks";
+"RESET_PREFERENCES" = "Επαναφορά προτιμήσεων";
+"RESET_PREFERENCES_MESSAGE" = "Οι προτιμήσεις του Choicy-Whitelist θα επαναφερθούν οριστικά. Συνέχεια;";
+"RESPRING" = "Επανεκκίνηση SpringBoard";
+"RESTART_SPRINGBOARD" = "Επανεκκίνηση του SpringBoard";
+"SAVE" = "Αποθήκευση";
+"SECTION_STATUS_FORMAT" = "%@ · %@";
+"SELECT_EXECUTABLE" = "Επιλογή εκτελέσιμου";
+"SELECT_EXECUTABLE_MESSAGE" = "Ορίστε τη διαδρομή του εκτελέσιμου που θα προστεθεί στη λίστα.";
+"SHOW_OTHER_TWEAKS" = "Εμφάνιση άλλων tweaks (μη επιβεβαιωμένη αντιστοίχιση)";
+"STATUS_ENABLED" = "Ενεργοποιημένα";
+"STATUS_NOT_ENABLED" = "Μη ενεργοποιημένα";
+"STATUS_OFF" = "Κλειστά";
+"STATUS_ON" = "Ανοιχτά";
+"THE_INJECTION_PLATFORM" = "η πλατφόρμα έγχυσης";
+"THIRD_PARTY_PROCESS" = "Διεργασία τρίτου μέρους";
+"TWEAKS" = "Tweaks";
+"TWEAKS_DETECTING" = "Ανίχνευση tweaks…";
+"TWEAKS_LOADING_BEFORE_CHOICY_ALERT_MESSAGE" = "Επειδή το %@ φορτώνει αυτά τα tweaks πριν από το Choicy, ορισμένα tweaks δεν μπορούν να ελεγχθούν μεμονωμένα και εμφανίζονται γκρι.";
+"WARNING_ALERT_TITLE" = "Προειδοποίηση";

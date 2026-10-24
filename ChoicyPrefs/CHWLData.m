@@ -2,9 +2,8 @@
 #import "CHPTweakInfo.h"
 #import "../CHWhitelistPolicy.h"
 
-NSArray<NSString *> *CHWLPrivilegedTweakNames(NSDictionary *preferences)
+static NSArray<NSString *> *CHWLNamesInArray(id values)
 {
-    id values = preferences[@CH_PRIVILEGED_TWEAKS_KEY];
     if (![values isKindOfClass:NSArray.class]) return @[];
     NSMutableOrderedSet *names = [NSMutableOrderedSet new];
     for (id name in values) {
@@ -13,9 +12,42 @@ NSArray<NSString *> *CHWLPrivilegedTweakNames(NSDictionary *preferences)
     return names.array;
 }
 
+NSArray<NSString *> *CHWLPrivilegedTweakNames(NSDictionary *preferences)
+{
+    return CHWLNamesInArray(preferences[@CH_PRIVILEGED_TWEAKS_KEY]);
+}
+
+NSArray<NSString *> *CHWLManualPrivilegedTweakNames(NSDictionary *preferences)
+{
+    return CHWLNamesInArray(preferences[@CH_MANUAL_PRIVILEGED_TWEAKS_KEY]);
+}
+
+BOOL CHWLPrivilegeCandidate(NSDictionary *preferences, NSString *name, BOOL isUIKit)
+{
+    return name.length && (isUIKit || [CHWLManualPrivilegedTweakNames(preferences) containsObject:name]);
+}
+
 BOOL CHWLIsPrivilegedTweak(NSDictionary *preferences, NSString *name, BOOL isUIKit)
 {
-    return CHPrivilegeApplies(isUIKit, name.length && [CHWLPrivilegedTweakNames(preferences) containsObject:name]);
+    return CHPrivilegeApplies(isUIKit, name.length && [CHWLManualPrivilegedTweakNames(preferences) containsObject:name],
+        name.length && [CHWLPrivilegedTweakNames(preferences) containsObject:name]);
+}
+
+NSDictionary *CHWLPreferencesBySettingManualPrivileges(NSDictionary *preferences, NSArray<NSString *> *names)
+{
+    NSSet *previous = [NSSet setWithArray:CHWLManualPrivilegedTweakNames(preferences)];
+    NSSet *selected = [NSSet setWithArray:CHWLNamesInArray(names)];
+    NSMutableSet *enabled = [NSMutableSet setWithArray:CHWLPrivilegedTweakNames(preferences)];
+    for (NSString *name in previous) {
+        if (![selected containsObject:name]) [enabled removeObject:name];
+    }
+    for (NSString *name in selected) {
+        if (![previous containsObject:name]) [enabled removeObject:name];
+    }
+    NSMutableDictionary *updated = preferences.mutableCopy ?: [NSMutableDictionary new];
+    updated[@CH_MANUAL_PRIVILEGED_TWEAKS_KEY] = [selected.allObjects sortedArrayUsingSelector:@selector(compare:)];
+    updated[@CH_PRIVILEGED_TWEAKS_KEY] = [enabled.allObjects sortedArrayUsingSelector:@selector(compare:)];
+    return updated.copy;
 }
 
 NSArray *CHWLPrivilegeCandidates(NSArray *tweaks)
@@ -143,7 +175,15 @@ static NSInteger CHWLRowPriority(NSDictionary *row)
     if ([row[@"enabled"] boolValue]) return 0;
     BOOL matched = [row[@"matched"] boolValue];
     if ([row[@"privilegesDisabled"] boolValue]) return matched ? 2 : 3;
-    return matched ? 1 : 4;
+    if (matched) return 1;
+    return [row[@"thirdPartyProcess"] boolValue] ? 4 : 5;
+}
+
+CGFloat CHWLProcessRowHeight(BOOL enabled, BOOL matched, BOOL thirdParty)
+{
+    if (enabled) return 56;
+    if (matched && thirdParty) return 91;
+    return matched || thirdParty ? 72 : 56;
 }
 
 NSArray<NSDictionary *> *CHWLSortedRows(NSArray<NSDictionary *> *rows)
@@ -176,6 +216,11 @@ NSArray<NSDictionary *> *CHWLValidatedRecords(id cache, NSDictionary *context)
         if (identifier && (![identifier isKindOfClass:NSString.class] || ![identifier length])) return nil;
         id bundleID = record[@"bundleIdentifier"];
         if (bundleID && (![bundleID isKindOfClass:NSString.class] || ![bundleID length])) return nil;
+        id source = record[@"launchDaemonPath"];
+        if (source && (![source isKindOfClass:NSString.class] || ![source isAbsolutePath] || [source length] > 4096)) return nil;
+        id thirdParty = record[@"thirdPartyProcess"];
+        if (thirdParty && (![thirdParty isKindOfClass:NSNumber.class] ||
+            (![thirdParty isEqual:@YES] && ![thirdParty isEqual:@NO]))) return nil;
     }
     return records;
 }

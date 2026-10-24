@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
- 
+// HBLogDebugWeak is ommited from release builds
 
 #import <HBLog.h>
 #ifdef __DEBUG__

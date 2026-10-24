@@ -51,7 +51,7 @@
 	}
 	if(self.useSearchBar)
 	{
-		NSNumber* hideSearchBarWhileScrollingNum = [specifier propertyForKey:@"hideSearchBarWhileScrolling"];  
+		NSNumber* hideSearchBarWhileScrollingNum = [specifier propertyForKey:@"hideSearchBarWhileScrolling"];                         
 		if(hideSearchBarWhileScrollingNum)
 		{
 			self.hideSearchBarWhileScrolling = [hideSearchBarWhileScrollingNum boolValue];
@@ -67,7 +67,7 @@
 	[self _setUpSearchBar];
 }
 
- 
+                      
 
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
 {
@@ -134,7 +134,7 @@
 
 		if([firstLetters.firstObject isEqualToString:@"#"])
 		{
-			 
+			                                                                                               
 			[firstLetters removeObjectAtIndex:0];
 			[firstLetters addObject:@"#"];
 		}
@@ -144,9 +144,9 @@
 	return nil;
 }
 
- 
+                          
 
- 
+                                         
 
 - (void)applicationsDidInstall:(id)arg1
 {
@@ -162,7 +162,7 @@
 	});
 }
 
- 
+                                             
 
 - (void)setAlphabeticIndexingEnabled:(BOOL)enabled
 {
@@ -361,7 +361,7 @@
 	{
 		UITableView* tableView = [self valueForKey:@"_table"];
 		dispatch_async(_iconLoadQueue, ^{
-			 
+			                                                   
 			UIImage* iconImage = [UIImage _applicationIconImageForBundleIdentifier:applicationProxy.atl_bundleIdentifier format:0 scale:[UIScreen mainScreen].scale];
 			dispatch_async(dispatch_get_main_queue(), ^{
 				[specifier setProperty:iconImage forKey:@"iconImage"];
@@ -461,7 +461,7 @@
 	[_specifiers enumerateObjectsUsingBlock:^(PSSpecifier* specifier, NSUInteger idx, BOOL *stop)
 	{
 		NSString* trimmedName = [specifier.name stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-		 
+		                                                                          
 		trimmedName = [trimmedName stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"\u200E\u200F"]];
 
 		NSString* firstLetter = @"#";
@@ -493,7 +493,7 @@
 		NSString* cString;
 		if(c == ('Z'+1))
 		{
-			 
+			                                                                    
 			cString = @"#";
 		}
 		else
@@ -587,7 +587,7 @@
 			{
 				if(specifier.cellType != PSGroupCell)
 				{
-					 
+					                                        
 					if([self shouldHideApplicationSpecifier:specifier])
 					{
 						return;
@@ -595,7 +595,7 @@
 				}
 				else
 				{
-					 
+					                      
 					if(_specifiers.count == 0)
 					{
 						return;

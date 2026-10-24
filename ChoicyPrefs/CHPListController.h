@@ -20,6 +20,7 @@
 
 #import <Preferences/PSListController.h>
 #import <Preferences/PSSpecifier.h>
+@class CHPTweakInfo;
 
 @interface CHPListController : PSListController <UISearchResultsUpdating> {
     NSString *_searchKey;
@@ -31,6 +32,8 @@
 + (NSString *)previewStringForSpecifier:(PSSpecifier *)specifier;
 + (PSSpecifier *)createSpecifierForExecutable:(NSString *)executablePath named:(NSString *)name;
 - (void)applySearchControllerHideWhileScrolling:(BOOL)hideWhileScrolling;
+- (void)configureTargetInspectionForSpecifier:(PSSpecifier *)specifier tweak:(CHPTweakInfo *)tweak;
+- (void)presentBundleTargetsForSpecifier:(PSSpecifier *)specifier;
 - (NSString *)topTitle;
 - (NSString *)plistName;
 - (void)parseLocalizationsForSpecifiers:(NSArray *)specifiers;

@@ -26,6 +26,9 @@
 #import <roothide.h>
 #import "ChoicySB.h"
 #import "../CHLaunchOptions.h"
+#include <dlfcn.h>
+#include <signal.h>
+#include <unistd.h>
 
 NSBundle *CHBundle;
 static NSString *const CHShortcutWithout = @"com.crctdd.choicy-whitelist.launchWithoutAllTweaksOnce";
@@ -51,7 +54,7 @@ static void CHPrepareShortcutLaunch(SBSApplicationShortcutItem *item, NSString *
     if ([item.type isEqualToString:CHShortcutWithout]) mode = CHLaunchWithoutAllTweaks;
     else if ([item.type isEqualToString:CHShortcutWith]) mode = CHLaunchWithAllTweaks;
     else if ([item.type isEqualToString:@"com.opa334.choicy.toggleSafeModeOnce"]) {
-         
+                                                                     
         mode = CHSavedInjectionEnabled(bundleIdentifier) ? CHLaunchWithoutAllTweaks : CHLaunchWithAllTweaks;
     }
     if (mode == CHLaunchNormal) return;
@@ -75,13 +78,13 @@ BOOL choicy_shouldShow3DTouchOptionForDisableTweakInjectionState(BOOL disabled)
     CHLaunchMode mode = CHConsumePendingLaunchMode(CHPendingLaunchModes(), bundleIdentifier);
     if (mode != CHLaunchNormal) executionContext.environment = CHEnvironmentForLaunchMode(executionContext.environment, bundleIdentifier, mode);
 
-	 
+	                                                                                                              
 	if (kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber_iOS_13_0) {
 		choicy_applyEnvironmentChangesToExecutionContext(executionContext, bundleIdentifier);
 	}	
 }
 
- 
+            
 - (id)_bootstrapProcessWithExecutionContext:(FBProcessExecutionContext *)executionContext synchronously:(BOOL)synchronously error:(id *)error
 {
 	[self choicy_handleEnvironmentChangesForExecutionContext:executionContext forAppWithBundleIdentifier:executionContext.identity.embeddedApplicationIdentifier];
@@ -89,7 +92,7 @@ BOOL choicy_shouldShow3DTouchOptionForDisableTweakInjectionState(BOOL disabled)
 	return %orig;
 }
 
- 
+              
 - (id)_createProcessWithExecutionContext:(FBProcessExecutionContext *)executionContext
 {
 	[self choicy_handleEnvironmentChangesForExecutionContext:executionContext forAppWithBundleIdentifier:executionContext.identity.embeddedApplicationIdentifier];
@@ -97,7 +100,7 @@ BOOL choicy_shouldShow3DTouchOptionForDisableTweakInjectionState(BOOL disabled)
 	return %orig;
 }
 
- 
+            
 - (id)createApplicationProcessForBundleID:(NSString *)bundleIdentifier withExecutionContext:(FBProcessExecutionContext *)executionContext
 {
 	[self choicy_handleEnvironmentChangesForExecutionContext:executionContext forAppWithBundleIdentifier:bundleIdentifier];
@@ -238,7 +241,31 @@ BOOL choicy_shouldShow3DTouchOptionForDisableTweakInjectionState(BOOL disabled)
 
 void respring(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
 {
-	[[%c(FBSystemService) sharedInstance] exitAndRelaunch:YES];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        void *frontBoard = dlopen("/System/Library/PrivateFrameworks/FrontBoardServices.framework/FrontBoardServices", RTLD_LAZY);
+        void *springBoard = dlopen("/System/Library/PrivateFrameworks/SpringBoardServices.framework/SpringBoardServices", RTLD_LAZY);
+        Class actionClass = NSClassFromString(@"SBSRelaunchAction");
+        Class serviceClass = NSClassFromString(@"FBSSystemService");
+        if (!frontBoard || !springBoard ||
+            ![actionClass respondsToSelector:@selector(actionWithReason:options:targetURL:)] ||
+            ![serviceClass respondsToSelector:@selector(sharedService)]) {
+            NSLog(@"Choicy-Whitelist: graphical session restart API unavailable");
+            return;
+        }
+        SBSRelaunchAction *action = [actionClass actionWithReason:@"Choicy-Whitelist"
+            options:(CHGraphicalRelaunchRestartRenderServer | CHGraphicalRelaunchFadeToBlack) targetURL:nil];
+        FBSSystemService *service = [serviceClass sharedService];
+        if (!action || ![service respondsToSelector:@selector(sendActions:withResult:)]) {
+            NSLog(@"Choicy-Whitelist: graphical session restart request unavailable");
+            return;
+        }
+        [service sendActions:[NSSet setWithObject:action] withResult:nil];
+    });
+}
+
+static void restartSpringBoard(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
+{
+    kill(getpid(), SIGTERM);
 }
 
 void choicy_initSpringBoard(void)
@@ -247,6 +274,7 @@ void choicy_initSpringBoard(void)
 
 	CHBundle = [NSBundle bundleWithPath:jbroot(@"/Library/Application Support/ChoicyWhitelist.bundle")];
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, respring, CFSTR("com.crctdd.choicy-whitelist/respring"), NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, restartSpringBoard, CFSTR("com.crctdd.choicy-whitelist/restartSpringBoard"), NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
 
 	if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_13_0) {
 		%init(Shortcut_iOS13Up);

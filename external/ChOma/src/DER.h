@@ -21,4 +21,4 @@ DEREncodedItem *der_encode_utf8_string(const char *string);
 DEREncodedItem *der_encode_sequence(DEREncodedItem *items[], uint32_t nItems);
 DEREncodedItem *der_encode_set(DEREncodedItem *items[], uint32_t nItems);
 
-#endif  
+#endif         

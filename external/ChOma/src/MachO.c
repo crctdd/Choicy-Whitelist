@@ -14,10 +14,10 @@
 int macho_read_at_offset(MachO *macho, uint64_t offset, size_t size, void *outBuf)
 {
     if (macho->containingCache) {
-         
-
-
-
+                                                                                                       
+                                                       
+                                                                                                                                 
+                                                                                                   
         uint64_t vmaddr = 0;
         if (macho_translate_fileoff_to_vmaddr(macho, offset, &vmaddr, NULL) == 0) {
             return macho_read_at_vmaddr(macho, vmaddr, size, outBuf);
@@ -30,7 +30,7 @@ int macho_read_at_offset(MachO *macho, uint64_t offset, size_t size, void *outBu
 int macho_read_string_at_offset(MachO *macho, uint64_t offset, char **outString)
 {
     if (macho->containingCache) {
-         
+                        
         uint64_t vmaddr = 0;
         if (macho_translate_fileoff_to_vmaddr(macho, offset, &vmaddr, NULL) == 0) {
             return macho_read_string_at_vmaddr(macho, vmaddr, outString);
@@ -108,7 +108,7 @@ int macho_read_at_vmaddr(MachO *macho, uint64_t vmaddr, size_t size, void *outBu
 
         uint64_t readEnd = vmaddr + size;
         if (readEnd >= (segment->command.vmaddr + segment->command.vmsize)) {
-             
+                          
             return -1;
         }
 
@@ -128,7 +128,7 @@ int macho_read_string_at_vmaddr(MachO *macho, uint64_t vmaddr, char **outString)
         if (r != 0) return r;
 
         if (vmaddr >= (segment->command.vmaddr + segment->command.vmsize)) {
-             
+                          
             return -1;
         }
 
@@ -145,7 +145,7 @@ int macho_write_at_vmaddr(MachO *macho, uint64_t vmaddr, size_t size, const void
 
     uint64_t readEnd = vmaddr + size;
     if (readEnd >= (segment->command.vmaddr + segment->command.vmsize)) {
-         
+                      
         return -1;
     }
 
@@ -159,7 +159,7 @@ int macho_enumerate_load_commands(MachO *macho, void (^enumeratorBlock)(struct l
         return -1;
     }
 
-     
+                                                  
     uint64_t offset = macho_get_mach_header_size(macho);
 
     for (int j = 0; j < macho->machHeader.ncmds; j++) {
@@ -172,7 +172,7 @@ int macho_enumerate_load_commands(MachO *macho, void (^enumeratorBlock)(struct l
             printf("Ignoring unknown command: 0x%x.\n", loadCommand.cmd);
         }
         else {
-             
+                                                                   
             uint8_t cmd[loadCommand.cmdsize];
             if (macho_read_at_offset(macho, offset, loadCommand.cmdsize, cmd) != 0) continue;
             bool stop = false;
@@ -211,8 +211,8 @@ int macho_enumerate_symbols(MachO *macho, void (^enumeratorBlock)(const char *na
     bool didScanDSC = false;
 
     if (macho->containingCache && macho->cacheImage) {
-         
-
+                                                                                                           
+                                                                                              
         didScanDSC = (dsc_image_enumerate_symbols(macho->containingCache, macho->cacheImage, enumeratorBlock) == 0);
     }
 
@@ -258,7 +258,7 @@ int macho_enumerate_symbols(MachO *macho, void (^enumeratorBlock)(const char *na
                 if (symbolName[0] == 0) continue;
 
                 if (didScanDSC) {
-                     
+                                                                                                         
                     if (!strcmp(symbolName, "<redacted>")) continue;
                 }
 
@@ -355,7 +355,7 @@ uint64_t macho_get_base_address(MachO *macho)
             SEGMENT_COMMAND_64_APPLY_BYTE_ORDER(segmentCommand, LITTLE_TO_HOST_APPLIER);
             if (strncmp(segmentCommand->segname, "__PRELINK", 9) != 0 
                 && strncmp(segmentCommand->segname, "__PLK", 5) != 0) {
-                 
+                                                                     
                 if (segmentCommand->vmaddr < base) {
                     base = segmentCommand->vmaddr;
                 }
@@ -417,8 +417,8 @@ int macho_parse_segments(MachO *macho)
             if (macho->segments == NULL) { macho->segments = malloc(macho->segmentCount * sizeof(MachOSegment*)); }
             else { macho->segments = realloc(macho->segments, macho->segmentCount * sizeof(MachOSegment*)); }
             
-             
-
+                                                                                   
+                                                                              
 
             struct segment_command segmentCommand;
             memcpy(&segmentCommand, cmd, sizeof(segmentCommand));
@@ -497,7 +497,7 @@ int macho_parse_fileset_machos(MachO *macho)
             
             MemoryStream *subStream = memory_stream_softclone(macho->stream);
             
-             
+                                                                                                             
             memory_stream_trim(subStream, filesetCommand->fileoff, 0);
             filesetMacho->underlyingMachO = fat_init_from_memory_stream(subStream);
         }
@@ -527,7 +527,7 @@ MachO *macho_init(MemoryStream *stream, struct fat_arch_64 archDescriptor)
     if (macho_read_at_offset(macho, 0, sizeof(macho->machHeader), &macho->machHeader) != 0) goto fail;
     MACH_HEADER_APPLY_BYTE_ORDER(&macho->machHeader, LITTLE_TO_HOST_APPLIER);
 
-     
+                                                  
     if (macho->machHeader.magic != MH_MAGIC_64 && macho->machHeader.magic != MH_MAGIC) {
         goto fail;
     }

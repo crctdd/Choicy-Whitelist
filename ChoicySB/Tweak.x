@@ -55,31 +55,21 @@ void choicy_reloadPreferences(void)
 	}
 }
 
-BOOL choicy_shouldDisableTweakInjectionForApplication(NSString *applicationID)
-{
-    NSString *executablePath = CHExecutablePathForApplication(applicationID);
-    if (CHInjectionIsForced(applicationID, executablePath)) return NO;
-    BOOL overrideExists = NO;
-    BOOL value = [[ChoicyOverrideManager sharedManager] disableTweakInjectionOverrideForApplication:applicationID overrideExists:&overrideExists];
-    if (overrideExists) return value;
-    return !CHInjectionEnabled(preferences, applicationID, executablePath);
-}
-
 NSDictionary *choicy_applyEnvironmentChanges(NSDictionary *originalEnvironment, NSString *bundleIdentifier)
 {
     originalEnvironment = CHEnvironmentForPrivilegeScope(originalEnvironment, bundleIdentifier,
         CHApplicationSupportsPrivilege(bundleIdentifier));
-     
+                                                                                        
     if (!bundleIdentifier.length) return originalEnvironment;
     CHLaunchMode launchMode = CHLaunchModeForProcess([originalEnvironment[@CH_LAUNCH_MODE_ENV] UTF8String],
         [originalEnvironment[@CH_LAUNCH_TARGET_ENV] UTF8String], bundleIdentifier.UTF8String, true);
     if (launchMode != CHLaunchNormal) return CHEnvironmentForLaunchMode(originalEnvironment, bundleIdentifier, launchMode);
 	if (originalEnvironment[@"_MSSafeMode"] || originalEnvironment[@"_SafeMode"]) {
-		 
+		                                                 
 		return originalEnvironment;
 	}
 	else if (originalEnvironment[@"_ChoicyInjectionEnabledFromSpringBoard"]) {
-		 
+		                                              
 		return originalEnvironment;
 	}
 
@@ -87,8 +77,8 @@ NSDictionary *choicy_applyEnvironmentChanges(NSDictionary *originalEnvironment, 
     ChoicyOverrideManager *overrideManager = [ChoicyOverrideManager sharedManager];
     BOOL disableOverrideExists = NO;
     BOOL disableOverride = [overrideManager disableTweakInjectionOverrideForApplication:bundleIdentifier overrideExists:&disableOverrideExists];
-     
-
+                                                                                         
+                                                                                                    
 	if (disableOverrideExists && disableOverride && !CHInjectionIsForced(bundleIdentifier, CHExecutablePathForApplication(bundleIdentifier))) {
 		[newEnvironment setObject:@(1) forKey:@"_MSSafeMode"];
 		[newEnvironment setObject:@(1) forKey:@"_SafeMode"];
@@ -100,8 +90,8 @@ NSDictionary *choicy_applyEnvironmentChanges(NSDictionary *originalEnvironment, 
 		BOOL customTweakConfigurationEnabledOverride = [overrideManager customTweakConfigurationEnabledOverwriteForApplication:bundleIdentifier overrideExists:&overrideExists];
 		if (overrideExists) {
 			if (!customTweakConfigurationEnabledOverride) {
-				 
-
+				                                                             
+				                            
 				[newEnvironment setObject:@"" forKey:@kEnvDeniedTweaksOverride];
 			}
 			else {
@@ -112,14 +102,14 @@ NSDictionary *choicy_applyEnvironmentChanges(NSDictionary *originalEnvironment, 
 					NSString *allowDenyString = [allowDenyList componentsJoinedByString:@":"];
 
 					NSString *envName;
-					if (customTweakAllowDenyOverride) {  
+					if (customTweakAllowDenyOverride) {        
 						envName = @kEnvDeniedTweaksOverride;
 					}
-					else {  
+					else {        
 						envName = @kEnvAllowedTweaksOverride;
 					}
 
-					 
+					                                                   
 
 					[newEnvironment setObject:allowDenyString forKey:envName];
 				}
@@ -127,7 +117,7 @@ NSDictionary *choicy_applyEnvironmentChanges(NSDictionary *originalEnvironment, 
 		}
 
 		BOOL overwriteGlobalConfigurationOverride = [overrideManager overwriteGlobalConfigurationOverrideForApplication:bundleIdentifier overrideExists:&overrideExists];
-		 
+		                                                                                                                            
 		if (overrideExists) {
 			NSString *envToSet;
 			if (overwriteGlobalConfigurationOverride) {

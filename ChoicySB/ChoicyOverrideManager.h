@@ -31,7 +31,7 @@
 
 - (BOOL)disableTweakInjectionOverrideForApplication:(NSString *)applicationID overrideExists:(BOOL *)overrideExists;
 - (BOOL)customTweakConfigurationEnabledOverwriteForApplication:(NSString *)applicationID overrideExists:(BOOL *)overrideExists;
-- (BOOL)customTweakConfigurationAllowDenyModeOverrideForApplication:(NSString *)applicationID overrideExists:(BOOL *)overrideExists;  
+- (BOOL)customTweakConfigurationAllowDenyModeOverrideForApplication:(NSString *)applicationID overrideExists:(BOOL *)overrideExists;                        
 - (NSArray *)customTweakConfigurationAllowOrDenyListOverrideForApplication:(NSString *)applicationID overrideExists:(BOOL *)overrideExists;
 - (BOOL)overwriteGlobalConfigurationOverrideForApplication:(NSString *)applicationID overrideExists:(BOOL *)overrideExists;
 

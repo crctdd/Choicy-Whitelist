@@ -27,7 +27,7 @@
 - (NSString *)plistName { return nil; }
 - (BOOL)isPrivilegedPage { return [[self.specifier propertyForKey:@"chwlPrivilegedPage"] boolValue]; }
 - (PSSpecifier *)targetSpecifier { return [self.specifier propertyForKey:@"chwlTargetSpecifier"]; }
-- (NSString *)topTitle { return self.isPrivilegedPage ? @"自定义特权插件" : localize(@"CUSTOM_TWEAK_CONFIGURATION"); }
+- (NSString *)topTitle { return self.isPrivilegedPage ? localize(@"CUSTOM_PRIVILEGED_TWEAKS") : localize(@"CUSTOM_TWEAK_CONFIGURATION"); }
 - (NSString *)dictionaryName { return CHWLIdentifier(self.targetSpecifier).length ? kChoicyPrefsKeyAppSettings : kChoicyPrefsKeyDaemonSettings; }
 - (NSString *)settingsKey { return CHWLIdentifier(self.targetSpecifier) ?: CHWLExecutable(self.targetSpecifier).lastPathComponent; }
 - (NSString *)enabledKey { return self.isPrivilegedPage ? @CH_CUSTOM_PRIVILEGE_ENABLED_KEY : kChoicyProcessPrefsKeyCustomTweakConfigurationEnabled; }
@@ -49,6 +49,7 @@
 
 - (void)viewDidLoad
 {
+    [self applySearchControllerHideWhileScrolling:NO];
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(matchesChanged:)
         name:CHWLMatchesChanged object:nil];
     [super viewDidLoad];
@@ -123,11 +124,14 @@
         CHWLPrivilegeEligibleForSpecifier(self.targetSpecifier), self.settings);
 }
 
-- (void)appendTweaks:(NSArray *)tweaks unconfirmed:(BOOL)unconfirmed
+- (void)appendTweaks:(NSArray *)tweaks
 {
-    (void)unconfirmed;
     BOOL editable = self.available && [self.settings[self.enabledKey] boolValue];
+    NSMutableArray<PSSpecifier *> *rows = [NSMutableArray new];
     for (CHPTweakInfo *tweak in tweaks) {
+        CHPPackageInfo *package = [CHPPackageInfo fetchPackageInfoForDylibName:tweak.dylibName];
+        if (_searchKey.length && ![tweak.dylibName localizedStandardContainsString:_searchKey] &&
+            ![package.name localizedStandardContainsString:_searchKey]) continue;
         BOOL loadedEarly = [dylibsBeforeChoicy containsObject:tweak.dylibName];
         PSSpecifier *row = [PSSpecifier preferenceSpecifierNamed:tweak.dylibName target:self
             set:@selector(setTweakValue:specifier:) get:@selector(tweakValue:)
@@ -136,11 +140,23 @@
         [row setProperty:tweak.dylibName forKey:@"key"];
         [row setProperty:@(loadedEarly) forKey:@"chwlLoadedEarly"];
         [row setProperty:@(editable && !loadedEarly) forKey:@"enabled"];
-        CHPPackageInfo *package = [CHPPackageInfo fetchPackageInfoForDylibName:tweak.dylibName];
+        [self configureTargetInspectionForSpecifier:row tweak:tweak];
         NSString *subtitle = package.name.length ? [NSString stringWithFormat:@"%@: %@", localize(@"PACKAGE"), package.name] : @"";
         if (subtitle.length) [row setProperty:subtitle forKey:@"subtitle"];
-        [_specifiers addObject:row];
+        [rows addObject:row];
     }
+    if (!self.isPrivilegedPage) {
+        [rows sortUsingComparator:^NSComparisonResult(PSSpecifier *a, PSSpecifier *b) {
+            BOOL aOn = [[self tweakValue:a] boolValue];
+            BOOL bOn = [[self tweakValue:b] boolValue];
+            if (aOn != bOn) return aOn ? NSOrderedAscending : NSOrderedDescending;
+            NSString *aName = [a propertyForKey:@"key"];
+            NSString *bName = [b propertyForKey:@"key"];
+            NSComparisonResult order = [aName localizedCaseInsensitiveCompare:bName];
+            return order == NSOrderedSame ? [aName compare:bName] : order;
+        }];
+    }
+    [_specifiers addObjectsFromArray:rows];
 }
 
 - (void)showOtherCandidates
@@ -169,7 +185,7 @@
         BOOL available = self.available;
         BOOL enabled = [self.settings[self.enabledKey] boolValue];
         [_specifiers addObject:[PSSpecifier emptyGroupSpecifier]];
-        PSSpecifier *toggle = [PSSpecifier preferenceSpecifierNamed:@"启用" target:self
+        PSSpecifier *toggle = [PSSpecifier preferenceSpecifierNamed:localize(@"ENABLE") target:self
             set:@selector(setConfigurationValue:specifier:) get:@selector(configurationValue:)
             detail:nil cell:PSSwitchCell edit:nil];
         [toggle setProperty:self.enabledKey forKey:@"key"];
@@ -185,51 +201,47 @@
         [mode setProperty:@1 forKey:@"default"];
         [mode setProperty:@(available && enabled) forKey:@"enabled"];
         [_specifiers addObject:mode];
-        PSSpecifier *listGroup = [PSSpecifier emptyGroupSpecifier];
+        PSSpecifier *listGroup = self.isPrivilegedPage ? [PSSpecifier emptyGroupSpecifier] :
+            [PSSpecifier groupSpecifierWithName:localize(@"CONFIRMED_RECOGNITION")];
         [_specifiers addObject:listGroup];
         if (self.isPrivilegedPage) {
-            [self appendTweaks:self.candidates unconfirmed:NO];
+            [self appendTweaks:self.candidates];
         } else if (!self.analysis) {
-            [_specifiers addObject:[PSSpecifier preferenceSpecifierNamed:@"正在检测插件…"
+            [_specifiers addObject:[PSSpecifier preferenceSpecifierNamed:localize(@"TWEAKS_DETECTING")
                 target:self set:nil get:nil detail:nil cell:PSStaticTextCell edit:nil]];
         } else {
             NSDictionary *groups = self.candidateGroups;
             BOOL complete = [self.analysis[@"complete"] boolValue];
             [listGroup setProperty:(complete ?
-                @"按目标标识、可执行文件及可读取的框架依赖匹配。静态检测无法覆盖所有动态加载；缺少的插件可从“显示其他插件”中手动配置。" :
-                @"部分依赖或框架未能识别，当前匹配结果不完整。已保留可确认的结果，并展开待确认插件供手动配置；不会自动放行或清空名单。") forKey:@"footerText"];
-            [self appendTweaks:groups[@"matched"] unconfirmed:NO];
-            if ([groups[@"saved"] count]) {
-                [_specifiers addObject:[PSSpecifier groupSpecifierWithName:@"已保存的其他插件"]];
-                [self appendTweaks:groups[@"saved"] unconfirmed:YES];
-            }
-            if ([groups[@"other"] count] || !complete) {
-                if (self.showOtherTweaks || !complete) {
-                    PSSpecifier *other = [PSSpecifier groupSpecifierWithName:@"其他插件（未确认匹配）"];
-                    [other setProperty:@"这些条目仅供手动配置，不代表插件指定注入此目标。勾选后也只有符合插件原有注入条件时才可能加载。" forKey:@"footerText"];
-                    [_specifiers addObject:other];
-                    if (!complete) {
-                        PSSpecifier *retry = [PSSpecifier preferenceSpecifierNamed:@"重新检测插件"
-                            target:self set:nil get:nil detail:nil cell:PSButtonCell edit:nil];
-                        retry.buttonAction = @selector(retryAnalysis);
-                        [_specifiers addObject:retry];
-                    }
-                    [self appendTweaks:groups[@"other"] unconfirmed:YES];
-                } else {
-                    PSSpecifier *more = [PSSpecifier preferenceSpecifierNamed:@"显示其他插件（未确认匹配）"
+                localize(@"CANDIDATES_COMPLETE_FOOTER") :
+                localize(@"CANDIDATES_INCOMPLETE_FOOTER")) forKey:@"footerText"];
+            [self appendTweaks:groups[@"matched"]];
+            PSSpecifier *other = [PSSpecifier groupSpecifierWithName:localize(@"OTHER_TWEAKS_UNCONFIRMED")];
+            [other setProperty:localize(@"OTHER_TWEAKS_FOOTER") forKey:@"footerText"];
+            [_specifiers addObject:other];
+            if (self.showOtherTweaks || !complete || _searchKey.length || [groups[@"saved"] count]) {
+                if (!complete) {
+                    PSSpecifier *retry = [PSSpecifier preferenceSpecifierNamed:localize(@"REDETECT_TWEAKS")
                         target:self set:nil get:nil detail:nil cell:PSButtonCell edit:nil];
-                    more.buttonAction = @selector(showOtherCandidates);
-                    [_specifiers addObject:more];
+                    retry.buttonAction = @selector(retryAnalysis);
+                    [_specifiers addObject:retry];
                 }
+                NSArray *unconfirmed = [groups[@"saved"] arrayByAddingObjectsFromArray:groups[@"other"]];
+                [self appendTweaks:unconfirmed];
+            } else if ([groups[@"other"] count]) {
+                PSSpecifier *more = [PSSpecifier preferenceSpecifierNamed:localize(@"SHOW_OTHER_TWEAKS")
+                    target:self set:nil get:nil detail:nil cell:PSButtonCell edit:nil];
+                more.buttonAction = @selector(showOtherCandidates);
+                [_specifiers addObject:more];
             }
         }
-        if (!self.candidates.count && (self.isPrivilegedPage || self.analysis)) {
-            [_specifiers addObject:[PSSpecifier preferenceSpecifierNamed:@"暂无可配置的插件"
+        if (!_searchKey.length && !self.candidates.count && (self.isPrivilegedPage || self.analysis)) {
+            [_specifiers addObject:[PSSpecifier preferenceSpecifierNamed:localize(@"NO_CONFIGURABLE_TWEAKS")
                 target:self set:nil get:nil detail:nil cell:PSStaticTextCell edit:nil]];
         }
         BOOL early = NO;
-        for (CHPTweakInfo *tweak in self.candidates) {
-            if ([dylibsBeforeChoicy containsObject:tweak.dylibName]) { early = YES; break; }
+        for (PSSpecifier *row in _specifiers) {
+            if ([[row propertyForKey:@"chwlLoadedEarly"] boolValue]) { early = YES; break; }
         }
         if (early) {
             PSSpecifier *notice = [PSSpecifier preferenceSpecifierNamed:localize(@"GREYED_OUT_ENTRIES")

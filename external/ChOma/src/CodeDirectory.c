@@ -31,7 +31,7 @@ bool csd_code_directory_calculate_page_hash(CS_DecodedBlob *codeDirBlob, MachO *
     uint32_t pageToReadSize = (uint32_t)(pow(2.0, (double)(codeDir.pageSize)));
     uint32_t pageToReadOffset = slot * pageToReadSize;
 
-     
+                                                         
     if (slot == codeDir.nCodeSlots - 1) {
         uint32_t csOffset = 0, csSize = 0;
         macho_find_code_signature_bounds(macho, &csOffset, &csSize);
@@ -40,7 +40,7 @@ bool csd_code_directory_calculate_page_hash(CS_DecodedBlob *codeDirBlob, MachO *
         else pageToReadSize = csOffset - pageToReadOffset;
     }
 
-     
+                             
     if ((pageToReadOffset + pageToReadSize) > memory_stream_get_size(macho_get_stream(macho))) return false;
 
     uint8_t page[pageToReadSize];
@@ -140,7 +140,7 @@ int cs_code_directory_get_size(int version) {
         case 0x20500: return 0x60;
         case 0x20400: return 0x58;
         case 0x20300: return 0x40;
-         
+                                                             
         default: return 0x34;
     }
 }
@@ -215,7 +215,7 @@ int csd_code_directory_set_team_id(CS_DecodedBlob *codeDirBlob, char *newTeamID)
     uint32_t initalTeamOffset = 0;
     char *previousTeamID = csd_code_directory_copy_team_id(codeDirBlob, &initalTeamOffset);
     if (previousTeamID) {
-         
+                                                  
         uint32_t previousTeamIDSize = strlen(previousTeamID)+1;
         csd_blob_delete(codeDirBlob, initalTeamOffset, previousTeamIDSize);
         shift -= previousTeamIDSize;
@@ -236,11 +236,11 @@ int csd_code_directory_set_team_id(CS_DecodedBlob *codeDirBlob, char *newTeamID)
         }
     }
 
-     
+                         
     csd_blob_insert(codeDirBlob, codeDir.teamOffset, newTeamIDSize, newTeamID);
     shift += newTeamIDSize;
 
-     
+                                                                           
     if (codeDir.hashOffset != 0 && codeDir.hashOffset > initalTeamOffset) {
         codeDir.hashOffset += shift;
     }
@@ -248,7 +248,7 @@ int csd_code_directory_set_team_id(CS_DecodedBlob *codeDirBlob, char *newTeamID)
         codeDir.scatterOffset += shift;
     }
 
-     
+                                      
     CODE_DIRECTORY_APPLY_BYTE_ORDER(&codeDir, HOST_TO_BIG_APPLIER);
     csd_blob_write(codeDirBlob, 0, sizeof(codeDir), &codeDir);
     return 0;
@@ -286,11 +286,11 @@ int csd_code_directory_set_identifier(CS_DecodedBlob *codeDirBlob, char *newIden
         }
     }
 
-     
+                            
     csd_blob_insert(codeDirBlob, codeDir.identOffset, newIdentifierSize, newIdentifier);
     shift += newIdentifierSize;
 
-     
+                                                                           
     if (codeDir.teamOffset != 0 && codeDir.teamOffset > initialIDOffset) {
         codeDir.teamOffset += shift;
     }
@@ -301,7 +301,7 @@ int csd_code_directory_set_identifier(CS_DecodedBlob *codeDirBlob, char *newIden
         codeDir.scatterOffset += shift;
     }
 
-     
+                                      
     CODE_DIRECTORY_APPLY_BYTE_ORDER(&codeDir, HOST_TO_BIG_APPLIER);
     csd_blob_write(codeDirBlob, 0, sizeof(codeDir), &codeDir);
     return 0;
@@ -334,15 +334,15 @@ void csd_code_directory_set_hash_type(CS_DecodedBlob *codeDirBlob, uint8_t hashT
 
 unsigned csd_code_directory_calculate_rank(CS_DecodedBlob *codeDirBlob)
 {
-     
-
+                                                                                
+	                       
 	static uint32_t rankedHashTypes[] = {
 		CS_HASHTYPE_SHA160_160,
 		CS_HASHTYPE_SHA256_160,
 		CS_HASHTYPE_SHA256_256,
 		CS_HASHTYPE_SHA384_384,
 	};
-	 
+	                                                                            
     uint8_t type = csd_code_directory_get_hash_type(codeDirBlob);
 	for (unsigned i = 0; i < sizeof(rankedHashTypes) / sizeof(rankedHashTypes[0]); i++) {
 		if (rankedHashTypes[i] == type) {
@@ -356,7 +356,7 @@ int csd_code_directory_calculate_hash(CS_DecodedBlob *codeDirBlob, void *cdhashO
 {
     if (!codeDirBlob || !cdhashOut) return -1;
 
-     
+                                                                                  
     uint8_t cdhash[CC_SHA384_DIGEST_LENGTH];
 
     size_t cdBlobSize = csd_blob_get_size(codeDirBlob);
@@ -393,7 +393,7 @@ int csd_code_directory_print_content(CS_DecodedBlob *codeDirBlob, MachO *macho, 
     csd_blob_read(codeDirBlob, 0, sizeof(codeDir), &codeDir);
     CODE_DIRECTORY_APPLY_BYTE_ORDER(&codeDir, BIG_TO_HOST_APPLIER);
 
-     
+                      
     printf("Code directory:\n");
     printf("\tMagic: 0x%X\n", codeDir.magic);
     printf("\tLength: 0x%x\n", codeDir.length);
@@ -416,7 +416,7 @@ int csd_code_directory_print_content(CS_DecodedBlob *codeDirBlob, MachO *macho, 
     printf("\tPlatform: %d\n", codeDir.platform);
     printf("\tPage size: 0x%x\n", codeDir.pageSize);
 
-     
+                      
     if (codeDir.version >= 0x20100) {
         printf("\tScatter offset: 0x%x\n", codeDir.scatterOffset);
         uint32_t teamOffset = 0;
@@ -432,17 +432,17 @@ int csd_code_directory_print_content(CS_DecodedBlob *codeDirBlob, MachO *macho, 
     bool needsNewline = false;
 
     for (int64_t i = -((int64_t)codeDir.nSpecialSlots); i < (int64_t)codeDir.nCodeSlots; i++) {
-         
+                    
         uint8_t slotHash[codeDir.hashSize];
         csd_code_directory_read_slot_hash(codeDirBlob, macho, i, slotHash);
         if (printSlots || verifySlots) {
-             
+                                    
             needsNewline = true;
             printf("%s%lld: ", i < 0 ? "" : " ",  i);
 
             print_hash(slotHash, codeDir.hashSize);
 
-             
+                                           
             bool isZero = true;
             for (int j = 0; j < codeDir.hashSize; j++) {
                 if (slotHash[j] != 0) {
@@ -451,11 +451,11 @@ int csd_code_directory_print_content(CS_DecodedBlob *codeDirBlob, MachO *macho, 
                 }
             }
 
-             
-
-
+                                                                
+                                                                                             
+                                                                   
             if (!isZero) {
-                 
+                                                              
                 printf(" (%s)", cs_slot_to_string(i));
             }
         }
@@ -552,7 +552,7 @@ void csd_code_directory_update(CS_DecodedBlob *codeDirBlob, MachO *macho)
     CODE_DIRECTORY_APPLY_BYTE_ORDER(&codeDir, BIG_TO_HOST_APPLIER);
 
     uint32_t codeSignatureOffset = 0;
-     
+                                                                                                                            
     macho_find_code_signature_bounds(macho, &codeSignatureOffset, NULL);
     uint64_t finalPageBoundary = codeSignatureOffset ? align_to_size(codeSignatureOffset, 0x1000) : align_to_size(memory_stream_get_size(macho->stream), 0x1000);
     int numberOfPagesToHash = (finalPageBoundary / 0x1000);
@@ -566,7 +566,7 @@ void csd_code_directory_update(CS_DecodedBlob *codeDirBlob, MachO *macho)
             pageLength = finalPageBoundary - pageOffset;
         }
 
-         
+                    
         uint8_t pageData[pageLength];
         memset(pageData, 0, pageLength);
         macho_read_at_offset(macho, pageOffset, pageLength, pageData);
@@ -596,11 +596,11 @@ void csd_code_directory_update(CS_DecodedBlob *codeDirBlob, MachO *macho)
             printf("Error: unknown hash type (%d)\n", hashType);
         }
 
-         
+                         
         uint8_t pageHash[hashLen];
         hashFunc(pageData, (CC_LONG)pageLength, pageHash);
     
-         
+                                      
         uint32_t offsetOfBlobToReplace = codeDir.hashOffset + (pageNumber * codeDir.hashSize);
         csd_blob_write(codeDirBlob, offsetOfBlobToReplace, codeDir.hashSize, pageHash);
     }
@@ -612,17 +612,17 @@ CS_DecodedBlob *csd_code_directory_init(MachO *macho, int hashType, bool alterna
     newCodeDir.magic = CSMAGIC_CODEDIRECTORY;
     newCodeDir.version = 0x20200;
 
-     
-    newCodeDir.nSpecialSlots = 7;  
+                     
+    newCodeDir.nSpecialSlots = 7;                                         
     newCodeDir.hashType = hashType;
     newCodeDir.hashSize = cs_hash_type_to_length(hashType);
-    newCodeDir.pageSize = 0xC;  
+    newCodeDir.pageSize = 0xC;          
     newCodeDir.hashOffset = sizeof(CS_CodeDirectory) + (newCodeDir.nSpecialSlots * newCodeDir.hashSize);
 
     newCodeDir.nCodeSlots = (int)(align_to_size(memory_stream_get_size(macho->stream), 0x1000) / 0x1000);
 
-     
-
+                 
+                                                  
 
     CS_DecodedBlob *blob = malloc(sizeof(CS_DecodedBlob));
     blob->type = alternate ? CSSLOT_ALTERNATE_CODEDIRECTORIES : CSSLOT_CODEDIRECTORY;

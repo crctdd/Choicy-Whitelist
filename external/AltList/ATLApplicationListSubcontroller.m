@@ -23,7 +23,7 @@
 
 - (void)viewWillDisappear:(BOOL)animated
 {
-	 
+	                                              
 	PSListController* topVC = (PSListController*)self.navigationController.topViewController;
 	if([topVC respondsToSelector:@selector(reloadSpecifier:)])
 	{

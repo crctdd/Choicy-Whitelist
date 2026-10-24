@@ -89,6 +89,7 @@
             [row setProperty:info.executablePath forKey:@"executablePath"];
             [row setProperty:@YES forKey:@"chwlFrameworkMatching"];
             [row setProperty:@NO forKey:@"chwlPrivilegeEligible"];
+            [row setProperty:@(info.thirdPartyProcess) forKey:@"chwlThirdPartyProcess"];
             NSString *displayID = info.bundleIdentifier ?: info.plistIdentifier;
             if (displayID) [row setProperty:displayID forKey:@"processIdentifier"];
             if (info.bundleIdentifier) [row setProperty:info.bundleIdentifier forKey:@"targetBundleIdentifier"];
@@ -97,7 +98,7 @@
                 ![identifier localizedStandardContainsString:_searchKey]) continue;
             [rows addObject:row];
         }
-        [_specifiers addObjectsFromArray:CHWLGroupRows(rows, @"系统进程")];
+        [_specifiers addObjectsFromArray:CHWLGroupRows(rows, @"DAEMONS")];
         CHWLRememberListState(self);
     }
     return _specifiers;

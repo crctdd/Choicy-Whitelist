@@ -124,10 +124,10 @@ DyldSharedCacheFile *_dsc_load_file(const char *dscPath, const char suffix[32])
     
     if (strncmp(file->header.magic, "dyld_v", 6) != 0) goto fail;
 
-     
-
-
-
+                                                                           
+                                                                                                              
+                                                                                                                                       
+                                                                                                              
     if (file->header.mappingOffset < sizeof(file->header)) {
         memset((void *)((uintptr_t)&file->header + file->header.mappingOffset), 0, sizeof(file->header) - file->header.mappingOffset);
     }
@@ -172,7 +172,7 @@ DyldSharedCache *dsc_init_from_path_premapped(const char *path, uint32_t premapS
     sharedCache->symbolFile.index = 0;
     sharedCache->premapSlide = premapSlide;
 
-     
+                         
     DyldSharedCacheFile *mainFile = _dsc_load_file(path, "");
     if (!mainFile) {
         fprintf(stderr, "Error: Failed to load main cache file\n");
@@ -192,7 +192,7 @@ DyldSharedCache *dsc_init_from_path_premapped(const char *path, uint32_t premapS
     sharedCache->files[0] = mainFile;
 
     if (subCacheArrayCount > 0) {
-         
+                                                    
         int subCacheStructVersion = mainHeader->mappingOffset <= offsetof(struct dyld_cache_header, cacheSubType) ? 1 : 2;
 
         for (uint32_t i = 0; i < subCacheArrayCount; i++) {
@@ -203,7 +203,7 @@ DyldSharedCache *dsc_init_from_path_premapped(const char *path, uint32_t premapS
                 struct dyld_subcache_entry_v1 v1Entry;
                 dsc_file_read_at_offset(mainFile, mainHeader->subCacheArrayOffset + sizeof(v1Entry) * i, sizeof(v1Entry), &v1Entry);
                 
-                 
+                                                                                                        
                 memcpy(subcacheEntry.uuid, v1Entry.uuid, sizeof(uuid_t));
                 subcacheEntry.cacheVMOffset = v1Entry.cacheVMOffset;
                 snprintf(subcacheEntry.fileSuffix, sizeof(subcacheEntry.fileSuffix), ".%u", i+1);
@@ -229,7 +229,7 @@ DyldSharedCache *dsc_init_from_path_premapped(const char *path, uint32_t premapS
     }
 
     if (symbolFileExists) {
-         
+                                                                                       
         sharedCache->symbolFile.index = sharedCache->fileCount - 1;
 
         sharedCache->files[sharedCache->symbolFile.index] = _dsc_load_file(path, ".symbols");
@@ -255,7 +255,7 @@ DyldSharedCache *dsc_init_from_path_premapped(const char *path, uint32_t premapS
 
         struct dyld_cache_header *header = &file->header;
 
-         
+                                                     
 
         if (file->filesize < (header->mappingOffset + header->mappingCount * sizeof(struct dyld_cache_mapping_info))) {
             fprintf(stderr, "Warning: Failed to parse DSC %s.\n", file->filepath);
@@ -299,7 +299,7 @@ DyldSharedCache *dsc_init_from_path_premapped(const char *path, uint32_t premapS
                 thisMapping->ptr = mmap(NULL, thisMapping->size, PROT_READ, MAP_FILE | MAP_PRIVATE, file->fd, thisMapping->fileoff);
             }
 
-             
+                                                                                   
             if (!mainHeader->sharedRegionStart) {
                 if (thisMapping->vmaddr < sharedCache->baseAddress) {
                     sharedCache->baseAddress = thisMapping->vmaddr;
@@ -363,8 +363,8 @@ DyldSharedCache *dsc_init_from_path_premapped(const char *path, uint32_t premapS
         for (uint64_t i = 0; i < imagesCount; i++) {
             DyldSharedCacheImage *image = &sharedCache->containedImages[i];
             
-             
-
+                                                                           
+                                                                                    
             DyldSharedCacheMapping *mappingForThisImage = dsc_lookup_mapping(sharedCache, imageInfos[i].address, 0);
             if (!mappingForThisImage) {
                 continue;
@@ -372,8 +372,8 @@ DyldSharedCache *dsc_init_from_path_premapped(const char *path, uint32_t premapS
 
             uint64_t mappingEndAddr = mappingForThisImage->vmaddr + mappingForThisImage->size;
 
-             
-
+                                                                                
+                                                                              
             uint64_t endAddr = UINT64_MAX;
             for (int k = 0; k < imagesCount; k++) {
                 if (imageInfos[k].address > imageInfos[i].address) {
@@ -384,8 +384,8 @@ DyldSharedCache *dsc_init_from_path_premapped(const char *path, uint32_t premapS
                 }
             }
 
-             
-
+                                                                                             
+                                                            
             if (endAddr > mappingEndAddr) {
                 endAddr = mappingEndAddr;
             }
@@ -616,7 +616,7 @@ int dsc_image_enumerate_patches(DyldSharedCache *sharedCache, DyldSharedCacheIma
 int dsc_mapping_enumerate_chained_fixups_on_range(DyldSharedCache *sharedCache, DyldSharedCacheMapping *mapping, uint64_t rangeStart, uint64_t rangeEnd, void (^enumeratorBlock)(DyldSharedCachePointer *pointer, bool *stop))
 {
     if (!mapping->slideInfoPtr) return -1;
-    if (sharedCache->premapSlide != 0) return -1;  
+    if (sharedCache->premapSlide != 0) return -1;                                        
 
     uint32_t version = *(uint32_t *)mapping->slideInfoPtr;
     switch (version) {
@@ -641,7 +641,7 @@ int dsc_mapping_enumerate_chained_fixups_on_range(DyldSharedCache *sharedCache, 
                 uint32_t delta = info->page_starts[pageIdx];
                 union dyld_cache_slide_pointer5* loc = (mapping->ptr + (pageAddr - mapping->vmaddr));
                 if (delta != DYLD_CACHE_SLIDE_V5_PAGE_ATTR_NO_REBASE) {
-                    delta /= 8;  
+                    delta /= 8;                                                                         
                     do {
                         loc += delta;
                         delta = loc->auth.next;
@@ -674,7 +674,7 @@ int dsc_mapping_enumerate_chained_fixups_on_range(DyldSharedCache *sharedCache, 
             }
             break;
         }
-         
+                                               
         case 3: {
             struct dyld_cache_slide_info3 *info = mapping->slideInfoPtr;
             uint64_t startAddr = mapping->vmaddr;
@@ -696,7 +696,7 @@ int dsc_mapping_enumerate_chained_fixups_on_range(DyldSharedCache *sharedCache, 
                 uint32_t delta = info->page_starts[pageIdx];
                 union dyld_cache_slide_pointer3* loc = (mapping->ptr + (pageAddr - mapping->vmaddr));
                 if (delta != DYLD_CACHE_SLIDE_V3_PAGE_ATTR_NO_REBASE) {
-                    delta /= 8;  
+                    delta /= 8;                                                                         
                     do {
                         loc += delta;
                         delta = loc->auth.offsetToNextPointer;
@@ -852,17 +852,17 @@ int dsc_enumerate_chained_fixups(DyldSharedCache *sharedCache, void (^enumerator
 
 int dsc_image_enumerate_chained_fixups(DyldSharedCache *sharedCache, DyldSharedCacheImage *image, void (^enumeratorBlock)(DyldSharedCachePointer *pointer, bool *stop))
 {
-     
-
-
-
-
+      
+                                                                                                                        
+                                                                                                               
+                                                                                       
+      
     MachO *macho = fat_get_single_slice(image->fat);
     if (macho) {
         __block bool stopAll = false;
         macho_enumerate_segments(macho, ^(struct segment_command_64 *segment, bool *stop) {
-             
-            if (!strncmp(segment->segname, "__DATA", 6))   {
+                                                                                                                              
+            if (!strncmp(segment->segname, "__DATA", 6))                                         {
                 DyldSharedCacheMapping* mapping = dsc_lookup_mapping(sharedCache, segment->vmaddr, segment->vmsize);
                 if (mapping) {
                     dsc_mapping_enumerate_chained_fixups_on_range(sharedCache, mapping, segment->vmaddr, segment->vmaddr + segment->vmsize, ^(DyldSharedCachePointer *pointer, bool *stop2){

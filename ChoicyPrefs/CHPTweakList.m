@@ -46,7 +46,7 @@
 	static CHPTweakList *sharedInstance = nil;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^ {
-		 
+		                     
 		sharedInstance = [[CHPTweakList alloc] init];
 	});
 	return sharedInstance;
@@ -58,7 +58,7 @@
 		return @[jbroot([@"/" stringByAppendingString:@"Library/MobileSubstrate/DynamicLibraries"]), jbroot([@"/" stringByAppendingString:@"usr/lib/TweakInject"])];
 	}
 
-	 
+	                                                                                                      
 	return @[[@"/" stringByAppendingString:@"Library/MobileSubstrate/DynamicLibraries"], [@"/" stringByAppendingString:@"usr/lib/TweakInject"], @"/var/jb/Library/MobileSubstrate/DynamicLibraries", @"/var/jb/usr/lib/TweakInject"];
 }
 
@@ -212,24 +212,6 @@
     [self.candidateAnalysisCache invalidatePath:executablePath];
 }
 - (void)invalidateAllCandidateAnalyses { [self.candidateAnalysisCache invalidateAll]; }
-
-- (NSArray *)tweakListForExecutableAtPath:(NSString *)executablePath
-{
-    return [self candidateAnalysisForExecutableAtPath:executablePath][@"matches"];
-}
-
-- (BOOL)oneOrMoreTweaksInjectIntoExecutableAtPath:(NSString *)executablePath
-{
-	for (CHPTweakInfo *tweakInfo in [self tweakListForExecutableAtPath:executablePath]) {
-		if ([tweakInfo.dylibName containsString:@"Choicy"]) {
-			continue;
-		}
-		
-		return YES;
-	}
-
-	return NO;
-}
 
 - (BOOL)isTweak:(CHPTweakInfo *)tweak hiddenForApplicationWithIdentifier:(NSString *)applicationID
 {

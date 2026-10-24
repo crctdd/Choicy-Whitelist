@@ -21,9 +21,18 @@
 #import <Foundation/Foundation.h>
 #import "RunningBoard.h"
 
-@interface FBSystemService : NSObject
-+ (id)sharedInstance;
-- (void)exitAndRelaunch:(BOOL)arg1;
+typedef NS_OPTIONS(NSUInteger, CHGraphicalRelaunchOptions) {
+    CHGraphicalRelaunchRestartRenderServer = 1 << 0,
+    CHGraphicalRelaunchFadeToBlack = 1 << 2
+};
+
+@interface SBSRelaunchAction : NSObject
++ (instancetype)actionWithReason:(NSString *)reason options:(NSUInteger)options targetURL:(NSURL *)targetURL;
+@end
+
+@interface FBSSystemService : NSObject
++ (instancetype)sharedService;
+- (void)sendActions:(NSSet *)actions withResult:(id)result;
 @end
 
 @interface FBProcessExecutionContext : NSObject

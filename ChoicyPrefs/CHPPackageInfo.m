@@ -63,7 +63,7 @@ NSArray *g_packageInfos;
 
 + (void)loadAvailablePackages
 {
-	 
+	                                                         
 	NSMutableArray *packageInfos = [NSMutableArray new];
 
 	NSString *dirPath = jbroot(@"/var/lib/dpkg/info");
@@ -74,7 +74,7 @@ NSArray *g_packageInfos;
 		if ([filename hasSuffix:@".list"]) {
 			NSString *packageID = [filename stringByDeletingPathExtension];
 			CHPPackageInfo *packageInfo = [[CHPPackageInfo alloc] initWithPackageIdentifier:packageID];
-			 
+			                                                         
 			if (packageInfo.tweakDylibs.count) {
 				[packageInfos addObject:packageInfo];
 			}

@@ -7,8 +7,8 @@
 
 int host_get_cpu_information(cpu_type_t *cputype, cpu_subtype_t *cpusubtype);
 
- 
-
+                                                
+                                                                                  
 MachO *fat_find_preferred_slice(Fat *fat);
 
-#endif  
+#endif          

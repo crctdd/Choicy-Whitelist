@@ -2,14 +2,14 @@
 #import <MobileCoreServices/LSApplicationWorkspace.h>
 
 @interface LSApplicationRecord : NSObject
-@property (nonatomic,readonly) NSArray* appTags;  
+@property (nonatomic,readonly) NSArray* appTags;            
 @property (getter=isLaunchProhibited,readonly) BOOL launchProhibited;
 @end
 
 @interface LSApplicationProxy (Additions)
 @property (nonatomic,readonly) NSString* localizedName;
-@property (nonatomic,readonly) NSString* applicationType;  
-@property (nonatomic,readonly) NSArray* appTags;  
+@property (nonatomic,readonly) NSString* applicationType;                 
+@property (nonatomic,readonly) NSArray* appTags;            
 @property (getter=isLaunchProhibited,nonatomic,readonly) BOOL launchProhibited;
 + (instancetype)applicationProxyForIdentifier:(NSString*)identifier;
 - (LSApplicationRecord*)correspondingApplicationRecord;

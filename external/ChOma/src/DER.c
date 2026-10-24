@@ -16,7 +16,7 @@
 #define ASN1_INTEGER 0x02
 #define ASN1_UTF8_STRING 0x0C
 
- 
+                                                                                            
 
 void der_free_encoded_item(DEREncodedItem *item) {
     free(item->data);
@@ -126,7 +126,7 @@ DEREncodedItem *der_encode_integer(uint32_t value) {
         return NULL;
     }
 
-     
+                            
     value = HOST_TO_BIG(value);
     memcpy(item.data, &value, sizeof(uint32_t));
     item.length = 4;

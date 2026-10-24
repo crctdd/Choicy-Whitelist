@@ -139,7 +139,7 @@ int macho_replace_code_signature(MachO *macho, CS_SuperBlob *superblob)
 
     uint64_t newCodeSignatureSize = BIG_TO_HOST(superblob->length);
 
-     
+                                                                 
     uint64_t entireFileSize = memory_stream_get_size(macho->stream);
     uint64_t freeSpace = entireFileSize - csSegmentOffset;
     uint64_t paddingSize = freeSpace - sizeOfCodeSignature;
@@ -266,7 +266,7 @@ CS_DecodedSuperBlob *csd_superblob_decode(CS_SuperBlob *superblob)
     for (uint32_t i = 0; i < BIG_TO_HOST(superblob->count); i++) {
         CS_BlobIndex curIndex = superblob->index[i];
         BLOB_INDEX_APPLY_BYTE_ORDER(&curIndex, BIG_TO_HOST_APPLIER);
-         
+                                                                                              
 
         CS_GenericBlob *curBlobData = (CS_GenericBlob *)(((uint8_t*)superblob) + curIndex.offset);
 
@@ -280,7 +280,7 @@ CS_SuperBlob *csd_superblob_encode(CS_DecodedSuperBlob *decodedSuperblob)
 {
     uint32_t blobCount = 0, blobSize = 0;
 
-     
+                                                   
     CS_DecodedBlob *nextBlob = decodedSuperblob->firstBlob;
     while (nextBlob) {
         blobCount++;
@@ -291,24 +291,24 @@ CS_SuperBlob *csd_superblob_encode(CS_DecodedSuperBlob *decodedSuperblob)
     uint32_t superblobLength = sizeof(CS_SuperBlob) + (sizeof(CS_BlobIndex) * blobCount) + blobSize;
     CS_SuperBlob *superblob = malloc(superblobLength);
 
-     
+                                
     superblob->count = blobCount;
     superblob->length = superblobLength;
     superblob->magic = decodedSuperblob->magic;
     SUPERBLOB_APPLY_BYTE_ORDER(superblob, HOST_TO_BIG_APPLIER)
 
-     
+                                                     
     uint32_t idx = 0;
     uint32_t dataStartOffset = sizeof(CS_SuperBlob) + (sizeof(CS_BlobIndex) * blobCount);
     uint8_t *superblobData = ((uint8_t*)superblob) + dataStartOffset;
     uint8_t *superblobDataCur = superblobData;
     nextBlob = decodedSuperblob->firstBlob;
     while (nextBlob) {
-         
+                             
         uint32_t curSize = csd_blob_get_size(nextBlob);
         csd_blob_read(nextBlob, 0, curSize, superblobDataCur);
 
-         
+                         
         CS_BlobIndex *curIndex = &superblob->index[idx];
         curIndex->offset = dataStartOffset + (superblobDataCur - superblobData);
         curIndex->type = nextBlob->type;

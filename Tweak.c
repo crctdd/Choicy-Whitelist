@@ -83,6 +83,7 @@ xpc_object_t gAllowedTweaks = NULL;
 xpc_object_t gDeniedTweaks = NULL;
 xpc_object_t gGlobalDeniedTweaks = NULL;
 xpc_object_t gPrivilegedTweaks = NULL;
+xpc_object_t gManualPrivilegedTweaks = NULL;
 bool gCustomPrivilegeEnabled = false;
 bool gPrivilegeDenyMode = false;
 xpc_object_t gPrivilegeAllowedTweaks = NULL;
@@ -216,6 +217,8 @@ void load_global_preferences(xpc_object_t preferencesXdict, xpc_object_t process
 {
     xpc_object_t privileged = xpc_dictionary_get_value(preferencesXdict, kChoicyPrefsKeyPrivilegedTweaks);
     if (privileged && xpc_get_type(privileged) == XPC_TYPE_ARRAY) gPrivilegedTweaks = xpc_retain(privileged);
+    xpc_object_t manual = xpc_dictionary_get_value(preferencesXdict, CH_MANUAL_PRIVILEGED_TWEAKS_KEY);
+    if (manual && xpc_get_type(manual) == XPC_TYPE_ARRAY) gManualPrivilegedTweaks = xpc_retain(manual);
 	bool overwriteGlobalConfig = false;
 	char *overwriteEnvConfigStr = getenv(kEnvOverwriteGlobalConfigurationOverride);
 	if (overwriteEnvConfigStr) {
@@ -289,13 +292,13 @@ void load_process_preferences(xpc_object_t preferencesXdict, xpc_object_t proces
 			allowDenyMode = xpc_int64_get_value(allowDenyModeVal);
 		}
 
-		if (allowDenyMode == 2) {  
+		if (allowDenyMode == 2) {        
 			xpc_object_t deniedTweaks = xpc_dictionary_get_value(processPreferencesXdict, kChoicyProcessPrefsKeyDeniedTweaks);
 			if (deniedTweaks && xpc_get_type(deniedTweaks) == XPC_TYPE_ARRAY) {
 				gDeniedTweaks = xpc_retain(deniedTweaks);
 			}
 		}
-		else {  
+		else {                                          
 			xpc_object_t allowedTweaks = xpc_dictionary_get_value(processPreferencesXdict, kChoicyProcessPrefsKeyAllowedTweaks);
 			if (allowedTweaks && xpc_get_type(allowedTweaks) == XPC_TYPE_ARRAY) {
 				gAllowedTweaks = xpc_retain(allowedTweaks);
@@ -309,16 +312,16 @@ void load_process_preferences(xpc_object_t preferencesXdict, xpc_object_t proces
 
 void load_process_info(void)
 {
-	 
+	                       
 	uint32_t executablePathSize = 0;
 	_NSGetExecutablePath(NULL, &executablePathSize);
 	gExecutablePath = malloc(executablePathSize);
 	_NSGetExecutablePath(gExecutablePath, &executablePathSize);
 
-	 
+	                                                                                   
 	if (!strcmp(gExecutablePath, "/usr/libexec/logd") || !strcmp(gExecutablePath, "/usr/sbin/notifyd")) gShouldLog = false;
 
-	 
+	                    
 	char *executableDir = path_copy_dirname(gExecutablePath);
 	if (string_has_suffix(executableDir, ".app"))		 gProcessType = PROCESS_TYPE_APP;
 	else if (string_has_suffix(executableDir, ".appex")) gProcessType = PROCESS_TYPE_PLUGIN;
@@ -326,7 +329,7 @@ void load_process_info(void)
 
 	os_log_dbg("Identified process type: %d\n", gProcessType);
 
-	 
+	                              
 	size_t infoPlistPathSize = strlen(executableDir) + strlen("/Info.plist") + 1;
 	char infoPlistPath[infoPlistPathSize];
 	strlcpy(infoPlistPath, executableDir, infoPlistPathSize);
@@ -349,7 +352,7 @@ void load_process_info(void)
         gBundleIdentifier, gProcessType == PROCESS_TYPE_APP);
     gPrivilegeScopeAllowed = CHPrivilegeScopeAllows(gProcessType == PROCESS_TYPE_APP,
         gBundleIdentifier, getenv(CH_PRIVILEGED_APP_ENV));
-	 
+	                                   
 	parse_allow_deny_list(getenv(kEnvDeniedTweaksOverride), &gDeniedTweaks);
 	parse_allow_deny_list(getenv(kEnvAllowedTweaksOverride), &gAllowedTweaks);
 
@@ -364,7 +367,7 @@ void load_process_info(void)
 		if (gAllowedTweaksDesc) free(gAllowedTweaksDesc);
 	}
 
-	 
+	                   
 	xpc_object_t preferencesXdict = xpc_object_from_plist(kChoicyPrefsPlistPath);
     xpc_object_t processPreferencesXdict = NULL;
 	if (preferencesXdict) {
@@ -399,7 +402,7 @@ void load_process_info(void)
 				if (processPreferencesXdictDesc) free(processPreferencesXdictDesc);
 			}
 
-			 
+			                          
 			load_global_preferences(preferencesXdict, processPreferencesXdict);
 			if (gGlobalDeniedTweaks && gShouldLog && os_log_debug_enabled(OS_LOG_DEFAULT)) {
 				char *gGlobalDeniedTweaksDesc = xpc_copy_description(gGlobalDeniedTweaks);
@@ -486,7 +489,7 @@ bool should_load_dylib(const char *dylibPath)
             return CHShouldLoadManagedTweakForLaunch(gLaunchMode, !gTweakInjectionDisabled,
                 false, false, false, false, false);
         }
-		 
+		                                           
 		if (gProcessType == PROCESS_TYPE_APP) {
 			if (gBundleIdentifier && !strcmp(gBundleIdentifier, kPreferencesBundleID)) {
 				if (!strcmp(dylibName, "PreferenceLoader") || !strcmp(dylibName, "preferred")) {
@@ -506,7 +509,8 @@ bool should_load_dylib(const char *dylibPath)
 		bool tweakIsDenied = xpc_array_contains_string(gDeniedTweaks, dylibName);
 		bool tweakIsGloballyDenied = xpc_array_contains_string(gGlobalDeniedTweaks, dylibName);
         bool privileged = gPrivilegeScopeAllowed &&
-            CHPrivilegeApplies(isUIKit, xpc_array_contains_string(gPrivilegedTweaks, dylibName));
+            CHPrivilegeApplies(isUIKit, xpc_array_contains_string(gManualPrivilegedTweaks, dylibName),
+                xpc_array_contains_string(gPrivilegedTweaks, dylibName));
 
         if (!CHShouldLoadConfiguredTweak(gLaunchMode, !gTweakInjectionDisabled, privileged,
             gDisablePrivilegedTweaks, gCustomPrivilegeEnabled, gPrivilegeDenyMode,
@@ -551,12 +555,12 @@ void *dyld_dlopen_from_hook(const void *dyld, const char *path, int mode, void *
 const struct mach_header *find_tweak_loader_mach_header(const char **pathOut)
 {
 	const char *tweakLoaderPaths[] = {
-		jbroot("/usr/lib/TweakLoader.dylib"),													  
-		jbroot("/usr/lib/substitute-loader.dylib"),											  
-		jbroot("/usr/lib/TweakInject.dylib"),													  
-		jbroot("/usr/lib/substrate/SubstrateLoader.dylib"),									  
-		jbroot("/Library/Frameworks/CydiaSubstrate.framework/Libraries/SubstrateLoader.dylib"),  
-		jbroot("/usr/lib/Sonar/libsonar.dylib"),												  
+		jbroot("/usr/lib/TweakLoader.dylib"),													                               
+		jbroot("/usr/lib/substitute-loader.dylib"),											              
+		jbroot("/usr/lib/TweakInject.dylib"),													             
+		jbroot("/usr/lib/substrate/SubstrateLoader.dylib"),									             
+		jbroot("/Library/Frameworks/CydiaSubstrate.framework/Libraries/SubstrateLoader.dylib"),                              
+		jbroot("/usr/lib/Sonar/libsonar.dylib"),												         
 	};
 
 	bool foundTweakLoader = false;
@@ -595,7 +599,7 @@ int dyld_hook_routine(void **dyld, int idx, void *hook, void **orig, uint16_t pa
 	if (!dyldFuncPtrs) return -1;
 
 	if (vm_protect(mach_task_self_, (mach_vm_address_t)&dyldFuncPtrs[idx], sizeof(void *), false, VM_PROT_READ | VM_PROT_WRITE) == 0) {
-	 
+	                                                                                                                                
 	} else if (vm_protect(mach_task_self_, (mach_vm_address_t)&dyldFuncPtrs[idx], sizeof(void *), false, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY) == 0) {
 	} else {
 		abort();
@@ -645,17 +649,17 @@ __attribute__((constructor)) static void initializer(void)
 
 		void **dyld4Struct = litehook_find_dsc_symbol("/usr/lib/system/libdyld.dylib", "__ZN5dyld45gDyldE");
 		if (dyld4Struct) {
-			 
-
-
+			          
+			                                                                                                 
+			                                     
 
 			dyld_hook_routine(*dyld4Struct, 14, (void *)&dyld_dlopen_hook, (void **)&dyld_dlopen_orig, 0xBF31);
 			dyld_hook_routine(*dyld4Struct, 97, (void *)&dyld_dlopen_from_hook, (void **)&dyld_dlopen_from_orig, 0xD48C);
 		}
 		else {
-			 
-
-
+			           
+			                                                                                
+			                                                                      
 
 			void *libdyldHandle = dlopen("/usr/lib/system/libdyld.dylib", RTLD_NOW);
 			void *dlopen_from = dlsym(libdyldHandle, "dlopen_from");
@@ -666,9 +670,9 @@ __attribute__((constructor)) static void initializer(void)
 			const char *tweakLoaderPath = NULL;
 			const struct mach_header *tweakLoaderHeader = find_tweak_loader_mach_header(&tweakLoaderPath);
 			if (tweakLoaderHeader) {
-				 
-
-
+				                                                                                            
+				                                                                                                                
+				                                                                                                           
 				if (!strcmp(tweakLoaderPath, "/usr/lib/substitute-loader.dylib")) {
 					void *pointersToReplace[] = {
 						dlopen,
@@ -685,18 +689,18 @@ __attribute__((constructor)) static void initializer(void)
 					__unused int c = replace_bss_pointers(tweakLoaderHeader, pointersToReplace, replacementPointers, pointerCount);
 					os_log_dbg("Replaced %u dlopen/dlopen_from pointer(s) in bss section", c);
 
-					 
+					                                                                                                                                 
 				}
 #ifdef __arm64e__
-				 
-
+				                                                                                    
+				                                               
 				litehook_rebind_symbol((const mach_header_u *)tweakLoaderHeader, dlopen, dlopen_hook, NULL);
 				if (dlopen_from) {
 					litehook_rebind_symbol((const mach_header_u *)tweakLoaderHeader, dlopen_from, dlopen_from_hook, NULL);
 				}
 				return;
 #endif
-				 
+				                                                                                                       
 				static struct dyld_interpose_tuple interposes[2];
 				interposes[0] = (struct dyld_interpose_tuple){ .replacement = dlopen_hook, .replacee = dlopen };
 				if (dlopen_from) {

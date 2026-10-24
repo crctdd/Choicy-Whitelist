@@ -134,7 +134,7 @@
 			<key>cell</key>
 			<string>PSLinkCell</string>
 			<key>label</key>
-			<string>特权插件</string>
+			<string>PRIVILEGED_TWEAKS</string>
 			<key>detail</key>
 			<string>CHPPrivilegedTweakController</string>
 			<key>isController</key>
@@ -232,7 +232,7 @@
 			<key>cell</key>
 			<string>PSButtonCell</string>
 			<key>label</key>
-			<string>开发 (opa334)</string>
+			<string>DEVELOPER_OPA334</string>
 			<key>action</key>
 			<string>openProjectLink:</string>
 			<key>cellClass</key>
@@ -246,7 +246,7 @@
 			<key>cell</key>
 			<string>PSButtonCell</string>
 			<key>label</key>
-			<string>二改 (crctdd)</string>
+			<string>MODIFIED_BY_CRCTDD</string>
 			<key>action</key>
 			<string>openProjectLink:</string>
 			<key>cellClass</key>

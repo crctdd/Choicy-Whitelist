@@ -60,7 +60,7 @@
 			<key>id</key>
 			<string>CUSTOM_PRIVILEGED_CONFIGURATION</string>
 			<key>label</key>
-			<string>自定义特权插件</string>
+			<string>CUSTOM_PRIVILEGED_TWEAKS</string>
 			<key>key</key>
 			<string>customPrivilegedConfigurationEnabled</string>
 			<key>detail</key>

@@ -50,7 +50,7 @@ static char CHWLGroupedKey;
 - (PSSpecifier *)createGroupSpecifierForApplicationSection:(ATLApplicationSection *)section
 {
     PSSpecifier *group = [super createGroupSpecifierForApplicationSection:section];
-    [group setProperty:(section.sectionType == SECTION_TYPE_HIDDEN ? @"隐藏应用" : @"应用程序") forKey:@"chwlGroupName"];
+    [group setProperty:(section.sectionType == SECTION_TYPE_HIDDEN ? @"HIDDEN_APPLICATIONS" : @"APPLICATIONS") forKey:@"chwlGroupName"];
     return group;
 }
 - (NSMutableArray *)specifiers
@@ -59,14 +59,14 @@ static char CHWLGroupedKey;
     if (objc_getAssociatedObject(source, &CHWLGroupedKey)) return source;
     NSMutableArray *grouped = [NSMutableArray new];
     NSMutableArray *rows = [NSMutableArray new];
-    NSString *base = @"应用程序";
+    NSString *base = @"APPLICATIONS";
     for (PSSpecifier *item in source) {
         if (item.cellType == PSGroupCell) {
             [grouped addObjectsFromArray:CHWLGroupRows(rows, base)];
             [rows removeAllObjects];
-            base = [item propertyForKey:@"chwlGroupName"] ?: @"应用程序";
+            base = [item propertyForKey:@"chwlGroupName"] ?: @"APPLICATIONS";
         } else if ([item propertyForKey:@"applicationIdentifier"]) {
-            [item setProperty:@([base isEqualToString:@"应用程序"]) forKey:@"chwlPrivilegeEligible"];
+            [item setProperty:@([base isEqualToString:@"APPLICATIONS"]) forKey:@"chwlPrivilegeEligible"];
             [rows addObject:item];
         } else [grouped addObject:item];
     }
@@ -79,9 +79,9 @@ static char CHWLGroupedKey;
 - (NSString *)previewStringForApplicationWithIdentifier:(NSString *)applicationID
 {
     NSDictionary *section = [[self.specifier propertyForKey:@"sections"] firstObject];
-    return CHWLConfigurationSummary(CHInjectionEnabled(preferences, applicationID, CHExecutablePathForApplication(applicationID)),
+    return CHWLDisplayConfigurationSummary(CHWLConfigurationSummary(CHInjectionEnabled(preferences, applicationID, CHExecutablePathForApplication(applicationID)),
         [section[@"sectionType"] isEqualToString:@"Visible"],
-        processPreferencesForApplication(preferences, applicationID));
+        processPreferencesForApplication(preferences, applicationID)));
 }
 + (NSString *)previewStringForProcessPreferences:(NSDictionary *)processPreferences
 {

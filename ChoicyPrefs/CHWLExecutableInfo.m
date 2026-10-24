@@ -18,6 +18,6 @@ NSString *CHWLBundleIdentifierForExecutable(NSString *path)
         NSString *identifier = CHWLIdentifierFromURL([NSURL fileURLWithPath:directory isDirectory:YES]);
         if (identifier) return identifier;
     }
-     
+                                                                                     
     return CHWLIdentifierFromURL([NSURL fileURLWithPath:path isDirectory:NO]);
 }

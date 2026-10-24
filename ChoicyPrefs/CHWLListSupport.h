@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <Preferences/PSSpecifier.h>
 extern NSString *const CHWLMatchesChanged;
+NSString *CHWLDisplayConfigurationSummary(NSString *summary);
 void CHWLRefreshMatches(void);
 NSArray *CHWLMatchesForSpecifier(PSSpecifier *row);
 BOOL CHWLUsesFrameworkMatching(PSSpecifier *row);

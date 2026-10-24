@@ -25,6 +25,8 @@
 @property(nonatomic) NSString *executablePath;
 @property(nonatomic) NSString *plistIdentifier;
 @property(nonatomic) NSString *bundleIdentifier;
+@property(nonatomic) NSString *launchDaemonPath;
+@property(nonatomic) BOOL thirdPartyProcess;
 
 - (NSString *)executableName;
 

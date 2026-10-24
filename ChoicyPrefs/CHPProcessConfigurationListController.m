@@ -96,11 +96,6 @@
 	return nil;
 }
 
-- (BOOL)shouldShowAppPlugIns
-{
-	return NO;
-}
-
 - (NSString *)applicationIdentifier
 {
 	return _appIdentifier;
@@ -232,12 +227,12 @@
                     [[item propertyForKey:@"key"] isEqual:kChoicyProcessPrefsKeyOverwriteGlobalTweakConfiguration]) [_specifiers addObject:item];
             }
         }
-        PSSpecifier *group = [PSSpecifier groupSpecifierWithName:@"匹配注入插件"];
+        PSSpecifier *group = [PSSpecifier groupSpecifierWithName:localize(@"MATCHING_TWEAKS")];
         BOOL includeFrameworks = CHWLUsesFrameworkMatching(self.specifier);
         CHWLRequestFrameworkMatchesForSpecifier(self.specifier);
         [group setProperty:(includeFrameworks ?
-            @"根据目标标识、可执行文件及其直接和间接依赖的框架匹配候选插件；框架匹配在后台补充。包含配置中已禁用的项目，实际加载以运行时为准。" :
-            @"仅列出插件 plist 明确指定此 Bundle ID 或可执行文件的候选插件；包含配置中已禁用的项目，实际加载以运行时为准。") forKey:@"footerText"];
+            localize(@"MATCHING_FRAMEWORK_FOOTER") :
+            localize(@"MATCHING_EXPLICIT_FOOTER")) forKey:@"footerText"];
         [_specifiers addObject:group];
         NSArray *matches = CHWLMatchesForSpecifier(self.specifier);
         NSMutableArray<NSString *> *names = [NSMutableArray new];
@@ -247,9 +242,9 @@
             [names addObject:name];
         }
         NSString *text = names.count ? [names componentsJoinedByString:@"\n"] :
-            (includeFrameworks && !CHWLFrameworkAnalysisFinished(self.executablePath) ? @"正在检测框架匹配插件…" :
-            (includeFrameworks && CHWLFrameworkAnalysisFailed(self.executablePath) ? @"框架分析未完成，暂未发现明确匹配插件" :
-            (matches ? @"未检测到匹配插件" : @"正在检测匹配插件…")));
+            (includeFrameworks && !CHWLFrameworkAnalysisFinished(self.executablePath) ? localize(@"DETECTING_FRAMEWORK_MATCHES") :
+            (includeFrameworks && CHWLFrameworkAnalysisFailed(self.executablePath) ? localize(@"FRAMEWORK_ANALYSIS_INCOMPLETE") :
+            (matches ? localize(@"NO_MATCHING_INJECTION") : localize(@"DETECTING_INJECTION"))));
         PSSpecifier *row = [PSSpecifier preferenceSpecifierNamed:@"" target:self set:nil get:nil detail:nil cell:PSStaticTextCell edit:nil];
         [row setProperty:NSClassFromString(@"CHWLPluginCell") forKey:@"cellClass"];
         [row setProperty:text forKey:@"chwlBoxText"];
@@ -281,7 +276,7 @@
 {
     PSSpecifier *enabled = [self specifierForID:@"ENABLE_TWEAK_INJECTION"];
     [enabled setProperty:@(!CHInjectionIsForced(_appIdentifier ?: _pluginIdentifier, self.executablePath)) forKey:@"enabled"];
-     
+                                                                                            
     PSSpecifier *custom = [self specifierForID:@"CUSTOM_TWEAK_CONFIGURATION"];
     [custom setProperty:@(CHInjectionEnabled(preferences, _appIdentifier ?: _pluginIdentifier, self.executablePath)) forKey:@"enabled"];
     PSSpecifier *disablePrivilege = [self specifierForID:@"DISABLE_PRIVILEGED_TWEAKS"];
@@ -338,7 +333,7 @@
 {
     return CHWLCustomConfigurationActive([[row propertyForKey:@"chwlPrivilegedPage"] boolValue],
         CHInjectionEnabled(preferences, _appIdentifier ?: _pluginIdentifier, self.executablePath),
-        CHWLPrivilegeEligibleForSpecifier(self.specifier), _processPreferences) ? @"已启用" : @"";
+        CHWLPrivilegeEligibleForSpecifier(self.specifier), _processPreferences) ? localize(@"STATUS_ENABLED") : @"";
 }
 
 - (id)readPreferenceValue:(PSSpecifier *)specifier

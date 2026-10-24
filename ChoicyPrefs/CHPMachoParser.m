@@ -43,15 +43,15 @@ MachO *choicy_fat_find_preferred_slice(Fat *fat)
 
 	if (cputype == CPU_TYPE_ARM64) {
 		if (!candidateSlice && cpusubtype == CPU_SUBTYPE_ARM64E) {
-			 
+			                 
 			if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_14_0) {
 				candidateSlice = fat_find_slice(fat, cputype, CPU_SUBTYPE_ARM64E | CPU_SUBTYPE_ARM64E_ABI_V2);
 				if (!candidateSlice && kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber_iOS_15_0) {
-					 
+					                                                     
 					candidateSlice = fat_find_slice(fat, cputype, CPU_SUBTYPE_ARM64E);
 				}
 			}
-			 
+			                 
 			else {
 				candidateSlice = fat_find_slice(fat, cputype, CPU_SUBTYPE_ARM64E);
 			}
@@ -59,7 +59,7 @@ MachO *choicy_fat_find_preferred_slice(Fat *fat)
 
 		if (!candidateSlice) {
 			if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_15_0) {
-				 
+				                                                       
 				candidateSlice = fat_find_slice(fat, cputype, CPU_SUBTYPE_ARM64_V8);
 			}
 			if (!candidateSlice) {
@@ -84,7 +84,7 @@ MachO *choicy_fat_find_preferred_slice(Fat *fat)
 	static CHPMachoParser *sharedInstance = nil;
 	static dispatch_once_t onceToken;
 	dispatch_once(&onceToken, ^ {
-		 
+		                     
 		sharedInstance = [[CHPMachoParser alloc] init];
 	});
 	return sharedInstance;

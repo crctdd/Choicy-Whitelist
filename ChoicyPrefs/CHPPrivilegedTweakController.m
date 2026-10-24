@@ -5,11 +5,12 @@
 #import "CHPPackageInfo.h"
 #import "CHWLData.h"
 #import "CHWLListSupport.h"
+#import "CHPManualPrivilegedTweakController.h"
 #import "../Shared.h"
 
 @implementation CHPPrivilegedTweakController
 
-- (NSString *)topTitle { return @"特权插件"; }
+- (NSString *)topTitle { return localize(@"PRIVILEGED_TWEAKS"); }
 - (NSString *)plistName { return nil; }
 
 - (void)viewDidLoad
@@ -42,34 +43,50 @@
     [super specifiers];
     if (!_specifiers) {
         _specifiers = [NSMutableArray new];
-        PSSpecifier *group = [PSSpecifier emptyGroupSpecifier];
-        [group setProperty:@"仅列出 UIKit 类插件。特权仅对“应用程序”中的普通应用生效，可绕过其注入开关及普通自定义名单，仍遵守全局插件配置、该应用的“自定义特权插件”和“禁用特权插件”设置。系统进程、隐藏应用和应用拓展不享有特权，须手动启用注入。修改后在目标下次启动时生效。" forKey:@"footerText"];
-        [_specifiers addObject:group];
+        [_specifiers addObject:[PSSpecifier groupSpecifierWithName:localize(@"MANUAL_RECOGNITION")]];
+        PSSpecifier *manage = [PSSpecifier preferenceSpecifierNamed:localize(@"MANAGE_PRIVILEGED_TWEAKS") target:self
+            set:nil get:nil detail:CHPManualPrivilegedTweakController.class cell:PSLinkCell edit:nil];
+        [manage setProperty:NSClassFromString(@"CHWLLinkCell") forKey:@"cellClass"];
+        [_specifiers addObject:manage];
         CHPTweakList *list = [CHPTweakList sharedInstance];
-        for (CHPTweakInfo *tweak in CHWLPrivilegeCandidates(list.tweakList)) {
-            if ([list isTweakHiddenForAnyProcess:tweak]) continue;
-            CHPPackageInfo *package = [CHPPackageInfo fetchPackageInfoForDylibName:tweak.dylibName];
-            if (_searchKey.length && ![tweak.dylibName localizedStandardContainsString:_searchKey] &&
-                ![package.name localizedStandardContainsString:_searchKey]) continue;
-            PSSpecifier *row = [PSSpecifier preferenceSpecifierNamed:tweak.dylibName target:self
-                set:@selector(setPrivilegedValue:specifier:) get:@selector(readPrivilegedValue:)
-                detail:nil cell:PSSwitchCell edit:nil];
-            [row setProperty:NSClassFromString(@"CHPSubtitleSwitch") forKey:@"cellClass"];
-            [row setProperty:tweak.dylibName forKey:@"key"];
-            [row setProperty:@YES forKey:@"chwlUIKitTweak"];
-            [row setProperty:@YES forKey:@"enabled"];
-            [row setProperty:@NO forKey:@"default"];
-            if (package.name.length) [row setProperty:package.name forKey:@"subtitle"];
-            [_specifiers addObject:row];
+        NSSet *manualNames = [NSSet setWithArray:CHWLManualPrivilegedTweakNames(preferences)];
+        for (CHPTweakInfo *tweak in list.tweakList) {
+            if (!tweak.isUIKitTweak && [manualNames containsObject:tweak.dylibName]) [self appendTweak:tweak];
         }
-        if (_specifiers.count == 1) {
+        PSSpecifier *defaultsGroup = [PSSpecifier groupSpecifierWithName:localize(@"DEFAULT_RECOGNITION")];
+        [defaultsGroup setProperty:localize(@"PRIVILEGED_TWEAKS_FOOTER") forKey:@"footerText"];
+        [_specifiers addObject:defaultsGroup];
+        NSUInteger defaultsStart = _specifiers.count;
+        for (CHPTweakInfo *tweak in CHWLPrivilegeCandidates(list.tweakList)) {
+            [self appendTweak:tweak];
+        }
+        if (_specifiers.count == defaultsStart) {
             [_specifiers addObject:[PSSpecifier preferenceSpecifierNamed:
-                (_searchKey.length ? @"未找到匹配插件" : @"未检测到 UIKit 类插件")
+                (_searchKey.length ? localize(@"NO_MATCHING_TWEAKS") : localize(@"NO_UIKIT_TWEAKS"))
                 target:self set:nil get:nil detail:nil cell:PSStaticTextCell edit:nil]];
         }
         CHWLRememberListState(self);
     }
     return _specifiers;
+}
+
+- (void)appendTweak:(CHPTweakInfo *)tweak
+{
+    if ([CHPTweakList.sharedInstance isTweakHiddenForAnyProcess:tweak]) return;
+    CHPPackageInfo *package = [CHPPackageInfo fetchPackageInfoForDylibName:tweak.dylibName];
+    if (_searchKey.length && ![tweak.dylibName localizedStandardContainsString:_searchKey] &&
+        ![package.name localizedStandardContainsString:_searchKey]) return;
+    PSSpecifier *row = [PSSpecifier preferenceSpecifierNamed:tweak.dylibName target:self
+        set:@selector(setPrivilegedValue:specifier:) get:@selector(readPrivilegedValue:)
+        detail:nil cell:PSSwitchCell edit:nil];
+    [row setProperty:NSClassFromString(@"CHPSubtitleSwitch") forKey:@"cellClass"];
+    [row setProperty:tweak.dylibName forKey:@"key"];
+    [row setProperty:@(tweak.isUIKitTweak) forKey:@"chwlUIKitTweak"];
+    [row setProperty:@YES forKey:@"enabled"];
+    [row setProperty:@NO forKey:@"default"];
+    [self configureTargetInspectionForSpecifier:row tweak:tweak];
+    if (package.name.length) [row setProperty:package.name forKey:@"subtitle"];
+    [_specifiers addObject:row];
 }
 
 - (id)readPrivilegedValue:(PSSpecifier *)specifier
@@ -81,13 +98,17 @@
 - (void)setPrivilegedValue:(id)value specifier:(PSSpecifier *)specifier
 {
     NSString *name = [specifier propertyForKey:@"key"];
-     
+    NSMutableDictionary *latest = preferencesForWriting();
+                                                                                 
     BOOL eligible = NO;
     for (CHPTweakInfo *tweak in [CHPTweakList sharedInstance].tweakList) {
-        if ([tweak.dylibName isEqualToString:name]) { eligible = tweak.isUIKitTweak; break; }
+        if ([tweak.dylibName isEqualToString:name] &&
+            ![CHPTweakList.sharedInstance isTweakHiddenForAnyProcess:tweak]) {
+            eligible = CHWLPrivilegeCandidate(latest, name, tweak.isUIKitTweak);
+            break;
+        }
     }
     if (!eligible || !name.length) return;
-    NSMutableDictionary *latest = preferencesForWriting();
     NSMutableSet *names = [NSMutableSet setWithArray:CHWLPrivilegedTweakNames(latest)];
     if ([value boolValue]) [names addObject:name];
     else [names removeObject:name];

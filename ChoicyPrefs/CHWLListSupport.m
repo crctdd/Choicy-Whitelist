@@ -15,9 +15,16 @@
 NSString *const CHWLMatchesChanged = @"CHWLMatchesChanged";
 static char CHWLListStateKey;
 
+NSString *CHWLDisplayConfigurationSummary(NSString *summary)
+{
+    if ([summary isEqualToString:@"禁特权"]) return localize(@"PRIVILEGES_DISABLED_SHORT");
+    if ([summary isEqualToString:@"自定义"]) return localize(@"CUSTOM");
+    return summary;
+}
+
 void CHWLRefreshMatches(void)
 {
-     
+                                                                                            
     static BOOL pending;
     static CFAbsoluteTime lastCheck;
     if (pending || CFAbsoluteTimeGetCurrent() - lastCheck < 2) return;
@@ -103,7 +110,7 @@ void CHWLDecorateRow(PSSpecifier *row)
     NSString *subtitle = identifier ?: [row propertyForKey:@"processIdentifier"] ?: path.lastPathComponent ?: @"";
     BOOL enabled = CHInjectionEnabled(preferences, identifier, path);
     BOOL privilegeEligible = CHWLPrivilegeEligibleForSpecifier(row);
-     
+                                                                                     
     BOOL matched = [[CHPTweakList sharedInstance] explicitTweaksForBundleIdentifier:
         (identifier ?: [row propertyForKey:@"targetBundleIdentifier"]) executableName:path.lastPathComponent].count > 0;
     NSDictionary *settings = identifier.length ? processPreferencesForApplication(preferences, identifier) :
@@ -113,8 +120,9 @@ void CHWLDecorateRow(PSSpecifier *row)
     [row setProperty:@(enabled) forKey:@"chwlInjectionEnabled"];
     [row setProperty:@(matched) forKey:@"chwlMatched"];
     [row setProperty:@(CHWLPrivilegesDisabled(enabled, privilegeEligible, settings)) forKey:@"chwlPrivilegesDisabled"];
-    [row setProperty:CHWLConfigurationSummary(enabled, privilegeEligible, settings) forKey:@"chwlConfigurationSummary"];
-    [row setProperty:@(!enabled && matched ? 72 : 56) forKey:@"height"];
+    [row setProperty:CHWLDisplayConfigurationSummary(CHWLConfigurationSummary(enabled, privilegeEligible, settings)) forKey:@"chwlConfigurationSummary"];
+    [row setProperty:@(CHWLProcessRowHeight(enabled, matched,
+        [[row propertyForKey:@"chwlThirdPartyProcess"] boolValue])) forKey:@"height"];
 }
 
 NSMutableArray *CHWLGroupRows(NSArray<PSSpecifier *> *rows, NSString *name)
@@ -125,6 +133,7 @@ NSMutableArray *CHWLGroupRows(NSArray<PSSpecifier *> *rows, NSString *name)
         [records addObject:@{@"name": row.name ?: @"", @"identifier": [row propertyForKey:@"chwlIdentifier"] ?: @"",
             @"enabled": [row propertyForKey:@"chwlInjectionEnabled"], @"matched": [row propertyForKey:@"chwlMatched"],
             @"privilegesDisabled": [row propertyForKey:@"chwlPrivilegesDisabled"],
+            @"thirdPartyProcess": @([name isEqualToString:@"DAEMONS"] && [[row propertyForKey:@"chwlThirdPartyProcess"] boolValue]),
             @"row": row}];
     }
     NSMutableArray *result = [NSMutableArray new];
@@ -132,10 +141,10 @@ NSMutableArray *CHWLGroupRows(NSArray<PSSpecifier *> *rows, NSString *name)
     for (NSDictionary *record in CHWLSortedRows(records)) {
         NSInteger section = [record[@"enabled"] boolValue] ? 0 : 1;
         if (section != previous) {
-            NSString *status = [name isEqualToString:@"隐藏应用"] ?
-                (section == 0 ? @"已开启" : @"未开启") : (section == 0 ? @"已启用" : @"未启用");
-            [result addObject:[PSSpecifier groupSpecifierWithName:[NSString stringWithFormat:@"%@ · %@", name,
-                status]]];
+            NSString *status = [name isEqualToString:@"HIDDEN_APPLICATIONS"] ?
+                (section == 0 ? @"STATUS_ON" : @"STATUS_OFF") : (section == 0 ? @"STATUS_ENABLED" : @"STATUS_NOT_ENABLED");
+            [result addObject:[PSSpecifier groupSpecifierWithName:[NSString stringWithFormat:localize(@"SECTION_STATUS_FORMAT"),
+                localize(name), localize(status)]]];
             previous = section;
         }
         [result addObject:record[@"row"]];

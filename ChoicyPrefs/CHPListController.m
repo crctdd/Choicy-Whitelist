@@ -25,6 +25,7 @@
 #import "CHPProcessConfigurationListController.h"
 #import "CHWLData.h"
 #import "CHWLListSupport.h"
+#import "CHPTweakInfo.h"
 
 @implementation CHPListController
 
@@ -43,7 +44,7 @@
 
 + (NSString *)previewStringForProcessPreferences:(NSDictionary *)processPreferences
 {
-    return CHWLConfigurationSummary(parseNumberBool(processPreferences[kChoicyProcessPrefsKeyTweakInjectionEnabled], NO), NO, processPreferences);
+    return CHWLDisplayConfigurationSummary(CHWLConfigurationSummary(parseNumberBool(processPreferences[kChoicyProcessPrefsKeyTweakInjectionEnabled], NO), NO, processPreferences));
 }
 
 + (NSString *)previewStringForSpecifier:(PSSpecifier *)specifier
@@ -52,7 +53,7 @@
     NSString *path = [specifier propertyForKey:@"executablePath"] ?: CHExecutablePathForApplication(identifier);
     NSDictionary *settings = identifier.length ? processPreferencesForApplication(preferences, identifier) :
         processPreferencesForDaemon(preferences, path.lastPathComponent);
-    return CHWLConfigurationSummary(CHInjectionEnabled(preferences, identifier, path), CHWLPrivilegeEligibleForSpecifier(specifier), settings);
+    return CHWLDisplayConfigurationSummary(CHWLConfigurationSummary(CHInjectionEnabled(preferences, identifier, path), CHWLPrivilegeEligibleForSpecifier(specifier), settings));
 }
 
 + (PSSpecifier *)createSpecifierForExecutable:(NSString *)executablePath named:(NSString *)name
@@ -85,13 +86,13 @@
 	return specifier;
 }
 
- 
+                                 
 - (NSString *)topTitle
 {
 	return nil;
 }
 
- 
+                                 
 - (NSString *)plistName
 {
 	return nil;
@@ -128,6 +129,85 @@
 	[self reloadSpecifiers];
 }
 
+- (void)configureTargetInspectionForSpecifier:(PSSpecifier *)specifier tweak:(CHPTweakInfo *)tweak
+{
+    [specifier setProperty:@YES forKey:@"chwlInspectBundleTargets"];
+    NSMutableArray<NSString *> *bundleIdentifiers = [NSMutableArray new];
+    if ([tweak.explicitFilterBundles isKindOfClass:NSArray.class]) {
+        for (id identifier in tweak.explicitFilterBundles) {
+            if ([identifier isKindOfClass:NSString.class] && [identifier length]) [bundleIdentifiers addObject:identifier];
+        }
+    }
+    [specifier setProperty:bundleIdentifiers.copy forKey:@"chwlPlistBundleIdentifiers"];
+    NSMutableArray<NSString *> *executables = [NSMutableArray new];
+    if ([tweak.filterExecutables isKindOfClass:NSArray.class]) {
+        for (id executable in tweak.filterExecutables) {
+            if ([executable isKindOfClass:NSString.class] && [executable length]) [executables addObject:executable];
+        }
+    }
+    [specifier setProperty:executables.copy forKey:@"chwlPlistExecutables"];
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
+	PSSpecifier *specifier = [self specifierAtIndexPath:indexPath];
+	if ([[specifier propertyForKey:@"chwlInspectBundleTargets"] boolValue]) {
+		NSNumber *enabled = [specifier propertyForKey:@"enabled"];
+		cell.selectionStyle = (!enabled || enabled.boolValue) ? UITableViewCellSelectionStyleDefault : UITableViewCellSelectionStyleNone;
+	}
+	return cell;
+}
+
+- (NSIndexPath *)tableView:(UITableView *)tableView willSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	PSSpecifier *specifier = [self specifierAtIndexPath:indexPath];
+	if ([[specifier propertyForKey:@"chwlInspectBundleTargets"] boolValue]) {
+		NSNumber *enabled = [specifier propertyForKey:@"enabled"];
+		return (!enabled || enabled.boolValue) ? indexPath : nil;
+	}
+	if ([PSListController instancesRespondToSelector:_cmd]) {
+		return [super tableView:tableView willSelectRowAtIndexPath:indexPath];
+	}
+	return indexPath;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	PSSpecifier *specifier = [self specifierAtIndexPath:indexPath];
+	if ([[specifier propertyForKey:@"chwlInspectBundleTargets"] boolValue]) {
+		[tableView deselectRowAtIndexPath:indexPath animated:YES];
+		NSNumber *enabled = [specifier propertyForKey:@"enabled"];
+		if (!enabled || enabled.boolValue) [self presentBundleTargetsForSpecifier:specifier];
+		return;
+	}
+	[super tableView:tableView didSelectRowAtIndexPath:indexPath];
+}
+
+- (void)presentBundleTargetsForSpecifier:(PSSpecifier *)specifier
+{
+	if (self.presentedViewController && self.presentedViewController != _searchController) return;
+	NSArray<NSString *> *identifiers = [specifier propertyForKey:@"chwlPlistBundleIdentifiers"];
+	NSArray<NSString *> *executables = [specifier propertyForKey:@"chwlPlistExecutables"];
+	NSMutableArray<NSString *> *sections = [NSMutableArray new];
+	if (identifiers.count) {
+		[sections addObject:[NSString stringWithFormat:@"%@\n\n%@", localize(@"BUNDLE_TARGETS_HEADER"), [identifiers componentsJoinedByString:@"\n"]]];
+	}
+	if (executables.count) {
+		[sections addObject:[NSString stringWithFormat:@"%@\n\n%@", localize(@"EXECUTABLE_TARGETS_HEADER"), [executables componentsJoinedByString:@"\n"]]];
+	}
+	NSString *targets = sections.count ? [sections componentsJoinedByString:@"\n\n"] : localize(@"NO_DECLARED_TARGETS");
+	NSString *title = [[specifier propertyForKey:@"key"] stringByAppendingPathExtension:@"plist"];
+	UIAlertController *alert = [UIAlertController alertControllerWithTitle:title
+		message:targets
+		preferredStyle:UIAlertControllerStyleAlert];
+	[alert addAction:[UIAlertAction actionWithTitle:localize(@"CLOSE") style:UIAlertActionStyleDefault handler:nil]];
+	alert.view.tintColor = UIColor.systemBlueColor;
+	UIViewController *presenter = self;
+	if (_searchController.active && _searchController.presentingViewController) presenter = _searchController;
+	[presenter presentViewController:alert animated:YES completion:nil];
+}
+
 - (NSMutableArray *)specifiers
 {
 	if (!_specifiers) {
@@ -149,7 +229,7 @@
 
 - (void)parseLocalizationsForSpecifiers:(NSArray *)specifiers
 {
-	 
+	                     
 	NSMutableArray *mutableSpecifiers = (NSMutableArray *)specifiers;
 	for (PSSpecifier *specifier in mutableSpecifiers) {
 		HBLogDebug(@"title:%@",specifier.properties[@"label"]);

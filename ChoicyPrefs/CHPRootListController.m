@@ -62,39 +62,6 @@ void writePreferences(NSMutableDictionary *mutablePrefs)
 	[CHPListController sendChoicyPrefsPostNotification];
 }
 
-NSArray *getInjectionLibraries()
-{
-	static NSArray *injectionLibraries = nil;
-
-	if (!injectionLibraries) {
-		NSMutableArray *injectionLibrariesM = [NSMutableArray new];
-
-		for (uint32_t i = 0; i < _dyld_image_count(); i++) {
-			const char *pathC = _dyld_get_image_name(i);
-			NSString *path = [NSString stringWithUTF8String:pathC];
-
-			if ([path hasSuffix:@"/usr/lib/substitute-inserter.dylib"]) {
-				[injectionLibrariesM addObject:path];
-			}
-			else if ([path hasSuffix:@"/usr/lib/substitute-loader.dylib"]) {
-				[injectionLibrariesM addObject:path];
-			}
-			else if ([path hasSuffix:@"/usr/lib/TweakInject.dylib"]) {
-				[injectionLibrariesM addObject:path];
-			}
-			else if ([path hasSuffix:@"/usr/lib/substrate/SubstrateInserter.dylib"]) {
-				[injectionLibrariesM addObject:path];
-			} else if ([path hasSuffix:@"/usr/lib/substrate/SubstrateLoader.dylib"]) {
-				[injectionLibrariesM addObject:path];
-			}
-		}
-
-		injectionLibraries = injectionLibrariesM.copy;
-	}
-
-	return injectionLibraries;
-}
-
 NSString *getInjectionPlatform()
 {
 	static NSString *injectionPlatform = nil;
@@ -144,7 +111,7 @@ NSString *getInjectionPlatform()
         UIImageSymbolConfiguration *configuration = [UIImageSymbolConfiguration configurationWithTextStyle:UIFontTextStyleBody
             scale:UIImageSymbolScaleLarge];
         UIImage *glyph = [UIImage systemImageNamed:symbol withConfiguration:configuration];
-         
+                                                                                        
         UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:CGSizeMake(32, 32)];
         UIImage *icon = [renderer imageWithActions:^(UIGraphicsImageRendererContext *context) {
             if (!glyph || glyph.size.width <= 0 || glyph.size.height <= 0) return;
@@ -176,9 +143,9 @@ NSString *getInjectionPlatform()
 - (void)rebuildProcessCache
 {
     [[NSFileManager defaultManager] removeItemAtPath:kChoicyProcessCachePath error:nil];
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"进程缓存已移除"
-        message:@"请退出并重新打开设置，下次进入系统进程页面将重新扫描。注入配置会保留。" preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:localize(@"CACHE_REMOVED_TITLE")
+        message:localize(@"CACHE_REMOVED_MESSAGE") preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:localize(@"OK") style:UIAlertActionStyleDefault handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
 }
 
@@ -260,6 +227,20 @@ void presentNotLoadingFirstWarning(PSListController *plc, BOOL showDontShowAgain
 - (void)viewDidLoad
 {
 	[super viewDidLoad];
+    UIAction *respringAction = [UIAction actionWithTitle:localize(@"RESPRING") image:nil identifier:nil handler:^(__kindof UIAction *action) {
+        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
+            CFSTR("com.crctdd.choicy-whitelist/respring"), NULL, NULL, YES);
+    }];
+    UIAction *restartAction = [UIAction actionWithTitle:localize(@"RESTART_SPRINGBOARD") image:nil identifier:nil handler:^(__kindof UIAction *action) {
+        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
+            CFSTR("com.crctdd.choicy-whitelist/restartSpringBoard"), NULL, NULL, YES);
+    }];
+    UIMenu *menu = [UIMenu menuWithTitle:@"" children:@[respringAction, restartAction]];
+    UIBarButtonItem *actionsButton = [[UIBarButtonItem alloc] initWithImage:[UIImage systemImageNamed:@"ellipsis.circle"]
+        menu:menu];
+    actionsButton.tintColor = UIColor.systemBlueColor;
+    actionsButton.accessibilityLabel = localize(@"MORE_ACTIONS");
+    self.navigationItem.rightBarButtonItem = actionsButton;
     CHWLRefreshMatches();
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
         [[CHPDaemonList sharedInstance] prepareApplicationExtensionsIfNeeded];
@@ -280,12 +261,12 @@ void determineLoadingOrder()
 
 	BOOL isSubstrate = [getInjectionPlatform() isEqualToString:@"Substrate"];
 	if (isSubstrate) {
-		 
+		                                                                                     
 		DIR *dir;
 		struct dirent *dp;
 		dir = opendir(injectionLibrariesPath.UTF8String);
-		dp=readdir(dir);  
-		dp=readdir(dir);  
+		dp=readdir(dir);    
+		dp=readdir(dir);     
 		while ((dp = readdir(dir)) != NULL) {
 			NSString *filename = [NSString stringWithCString:dp->d_name encoding:NSUTF8StringEncoding];
 
@@ -295,7 +276,7 @@ void determineLoadingOrder()
 		}
 	}
 	else {
-		 
+		                                                        
 		NSMutableArray *contents = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:injectionLibrariesPath error:nil] mutableCopy];
 		NSArray *plists = [contents filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF ENDSWITH %@", @"plist"]];
 		for (NSString *plist in plists) {
@@ -319,7 +300,7 @@ void determineLoadingOrder()
 		if ([[targetLoaderAttributes objectForKey:NSFileType] isEqualToString:NSFileTypeSymbolicLink]) {
 			NSString *destination = [[NSFileManager defaultManager] destinationOfSymbolicLinkAtPath:jbroot(@"/usr/lib/substrate/SubstrateLoader.dylib") error:nil];
 			if ([destination hasPrefix:@"/usr/lib/ChoicyLoader.dylib"]) {
-				 
+				                                                                       
 				dylibsBeforeChoicy = nil;
 			}
 		}
